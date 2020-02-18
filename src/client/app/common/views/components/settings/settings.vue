@@ -354,7 +354,7 @@ import XNotification from './notification.vue';
 import XRegEdit from './regedit.vue';
 import MkReactionPicker from '../reaction-picker.vue';
 
-import { url, version } from '../../../../config';
+import { url, version, instanceHost } from '../../../../config';
 import checkForUpdate from '../../../scripts/check-for-update';
 import { formatTimeString } from '../../../../../../misc/format-time-string';
 import { faSave, faEye } from '@fortawesome/free-regular-svg-icons';
@@ -696,7 +696,7 @@ export default Vue.extend({
 			});
 		},
 		customizeHome() {
-			location.href = '/?customize';
+			location.href = `/${instanceHost}/?customize`;
 		},
 		updateWallpaper() {
 			this.$chooseDriveFile({
