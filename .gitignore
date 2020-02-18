@@ -41,5 +41,4 @@ ormconfig.json
 *.blend5
 
 !/built/client
-/built/client/*
-!/built/client/index.*
+/built/client/assets
