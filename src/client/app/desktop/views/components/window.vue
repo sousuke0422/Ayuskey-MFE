@@ -16,7 +16,7 @@
 					</button>
 				</div>
 			</header>
-			<div class="content">
+			<div class="content" :style="windowblur_style">
 				<slot></slot>
 			</div>
 		</div>
@@ -88,6 +88,11 @@ export default Vue.extend({
 			default: true
 		}
 	},
+	data() {
+		return {
+			windowblur_style: {}
+		}
+	},
 
 	computed: {
 		isFlexible(): boolean {
@@ -113,7 +118,12 @@ export default Vue.extend({
 
 			this.open();
 		});
-	},
+		if (this.$store.state.device.darkmode == true) { // ダークテーマが有効の場合のみblurを強化
+			this.$set(this.windowblur_style, 'backdrop-filter', 'blur(0.5em)');
+		} else {
+			this.$set(this.windowblur_style, 'backdrop-filter', 'blur(0.2em)');
+		}
+		},
 
 	destroyed() {
 		// ウィンドウをウィンドウシステムから削除
@@ -442,13 +452,12 @@ export default Vue.extend({
 			const browserHeight = window.innerHeight;
 			const windowWidth = main.offsetWidth;
 			const windowHeight = main.offsetHeight;
-			if (position.left < 0) main.style.left = 0;     // 左はみ出し
-			if (position.top + windowHeight > browserHeight) main.style.top = browserHeight - windowHeight + 'px';  // 下はみ出し
-			if (position.left + windowWidth > browserWidth) main.style.left = browserWidth - windowWidth + 'px';    // 右はみ出し
-			if (position.top < 0) main.style.top = 0;       // 上はみ出し
+			if (position.top + windowHeight > browserHeight) main.style.top = browserHeight - windowHeight + 'px';	// 下はみ出し
+			if (position.left < 0) main.style.left = 0;	// 左はみ出し
+			if (position.top < 0) main.style.top = 0;	// 上はみ出し
+			if (position.left + windowWidth > browserWidth) main.style.left = browserWidth - windowWidth + 'px';	// 右はみ出し
 		}
-	}
-});
+	}});
 </script>
 
 <style lang="stylus" scoped>
@@ -463,6 +472,7 @@ export default Vue.extend({
 		left 0
 		width 100%
 		height 100%
+		backdrop-filter blur(4px)
 		background rgba(#000, 0.7)
 		opacity 0
 		pointer-events none
@@ -612,6 +622,7 @@ export default Vue.extend({
 			> .content
 				height 100%
 				overflow auto
+				background-color var(--face)
 
 	&:not([flexible])
 		> .main > .body > .content

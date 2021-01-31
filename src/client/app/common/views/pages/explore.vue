@@ -1,5 +1,12 @@
 <template>
 <div>
+	<ui-input v-model="query" style="margin: 1.2em 0.5em 1.5em;">
+		<span>{{ $t('searchUser') }}</span>
+	</ui-input>
+	<mk-user-list v-if="query && query !== ''" :pagination="foundUsers" :key="`${query}`">
+		<fa :icon="faSearch" fixed-width/>{{ query }}
+	</mk-user-list>
+
 	<div class="localfedi7" v-if="meta && stats && tag == null" :style="{ backgroundImage: meta.bannerUrl ? `url(${meta.bannerUrl})` : null }">
 		<header>{{ $t('explore', { host: meta.name || 'Misskey' }) }}</header>
 		<div>{{ $t('users-info', { users: num(stats.originalUsersCount) }) }}</div>
@@ -8,6 +15,9 @@
 	<template v-if="tag == null">
 		<mk-user-list :pagination="pinnedUsers" :expanded="false">
 			<fa :icon="faBookmark" fixed-width/>{{ $t('pinned-users') }}
+		</mk-user-list>
+		<mk-user-list :pagination="verifiedUsers">
+			<fa :icon="faCertificate" fixed-width/>{{ $t('verified-users') }}
 		</mk-user-list>
 		<mk-user-list :pagination="popularUsers" :expanded="false">
 			<fa :icon="faChartLine" fixed-width/>{{ $t('popular-users') }}
@@ -53,8 +63,9 @@
 <script lang="ts">
 import Vue from 'vue';
 import i18n from '../../../i18n';
-import { faChartLine, faPlus, faHashtag, faRocket } from '@fortawesome/free-solid-svg-icons';
+import { faChartLine, faPlus, faHashtag, faRocket, faCertificate, faSearch  } from '@fortawesome/free-solid-svg-icons';
 import { faBookmark, faCommentAlt } from '@fortawesome/free-regular-svg-icons';
+import endpoint from '../../../../../server/api/endpoints/endpoint';
 
 export default Vue.extend({
 	i18n: i18n('common/views/pages/explore.vue'),
@@ -75,6 +86,11 @@ export default Vue.extend({
 	data() {
 		return {
 			pinnedUsers: { endpoint: 'pinned-users' },
+			verifiedUsers: { endpoint: 'users', limit: 10, params: {
+				state: 'verified',
+				origin: 'local',
+				sort: '+follower',
+			} },
 			popularUsers: { endpoint: 'users', limit: 10, params: {
 				state: 'alive',
 				origin: 'local',
@@ -105,9 +121,10 @@ export default Vue.extend({
 			tagsLocal: [],
 			tagsRemote: [],
 			stats: null,
+			query: null,
 			meta: null,
 			num: Vue.filter('number'),
-			faBookmark, faChartLine, faCommentAlt, faPlus, faHashtag, faRocket
+			faBookmark, faChartLine, faCommentAlt, faPlus, faHashtag, faRocket, faCertificate, faSearch
 		};
 	},
 
@@ -120,6 +137,15 @@ export default Vue.extend({
 					tag: this.tag,
 					origin: 'combined',
 					sort: '+follower',
+				}
+			};
+		},
+		foundUsers(): any {
+			return {
+				endpoint: 'users/search',
+				limit: 30,
+				params: {
+					query: this.query,
 				}
 			};
 		},

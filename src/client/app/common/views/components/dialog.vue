@@ -170,7 +170,7 @@ export default Vue.extend({
 
 		onBgClick() {
 			if (this.cancelableByBgClick) this.cancel();
-		}
+		},
 
 		close() {
 			this.$refs.modal.close();

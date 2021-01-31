@@ -81,7 +81,7 @@ export default Vue.extend({
 			q: null,
 			result: [],
 			connection: null,
-			faUser, faUsers
+			faUser, faUsers,
 		};
 	},
 	mounted() {
@@ -213,13 +213,11 @@ export default Vue.extend({
 			if (canceled) return;
 			this.navigateGroup(group);
 		}
-	}
-});
+	});
 </script>
 
 <style lang="stylus" scoped>
 .mk-messaging
-
 	&[data-compact]
 		font-size 0.8em
 

@@ -68,7 +68,7 @@ export default Vue.extend({
 			connection: null,
 			showIndicator: false,
 			timer: null,
-			faArrowCircleDown, faFlag
+			faArrowCircleDown, faFlag,
 		};
 	},
 
@@ -191,7 +191,7 @@ export default Vue.extend({
 		onMessage(message) {
 			// サウンドを再生する
 			if (this.$store.state.device.enableSounds) {
-				const sound = new Audio(`${url}/assets/message.mp3`);
+				const sound = new Audio(`${url}/assets/waon.mp3`);
 				sound.volume = this.$store.state.device.soundVolume;
 				sound.play();
 			}
@@ -294,19 +294,18 @@ export default Vue.extend({
 				}
 			}
 		}
-	}
-});
+	});
 </script>
 
 <style lang="stylus" scoped>
 .mk-messaging-room
-	background var(--messagingRoomBg)
 
 	> .body
 		width 100%
 		max-width 600px
 		margin 0 auto
 		min-height calc(100% - 103px)
+		background var(--face)
 
 		> .init,
 		> .empty

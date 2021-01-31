@@ -7,6 +7,7 @@ import VueRouter from 'vue-router';
 
 // Style
 import './style.styl';
+import './style.scss'
 
 import init from '../init';
 
@@ -54,6 +55,7 @@ init((launch, os) => {
 
 				const vm = this.$root.new(PostFormDialog, {
 					reply: o.reply,
+					airReply: o.airReply,
 					mention: o.mention,
 					renote: o.renote,
 					initialText: o.initialText,
@@ -175,6 +177,7 @@ init((launch, os) => {
 			{ path: '/@:acct/room', props: true, component: () => import('../common/views/pages/room/room.vue').then(m => m.default) },
 			{ path: '/notes/:note', component: MkNote },
 			{ path: '/authorize-follow', component: MkFollow },
+			{ path: '/flags', component: () => import('../common/views/pages/flags.vue').then(m => m.default) },
 			{ path: '*', component: MkNotFound }
 		]
 	});

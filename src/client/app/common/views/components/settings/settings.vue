@@ -50,6 +50,11 @@
 				<ui-switch v-model="enableMobileQuickNotificationView">{{ $t('@._settings.enable-quick-notification-view') }}</ui-switch>
 			</section>
 			<section>
+				<header>{{ $t('@._settings.instance-ticker') }}</header>
+				<ui-radio v-model="instanceTicker" value="none">{{ $t('@._settings.instance-ticker-none') }}</ui-radio>
+				<ui-radio v-model="instanceTicker" value="remote">{{ $t('@._settings.instance-ticker-remote') }}</ui-radio>
+			</section>
+			<section>
 				<header>{{ $t('@._settings.line-width') }}</header>
 				<ui-radio v-model="lineWidth" :value="0.5">{{ $t('@._settings.line-width-thin') }}</ui-radio>
 				<ui-radio v-model="lineWidth" :value="1">{{ $t('@._settings.line-width-normal') }}</ui-radio>
@@ -86,6 +91,22 @@
 				<ui-radio v-model="deckColumnWidth" value="normal">{{ $t('@._settings.deck-column-width-normal') }}</ui-radio>
 				<ui-radio v-model="deckColumnWidth" value="wider">{{ $t('@._settings.deck-column-width-wider') }}</ui-radio>
 				<ui-radio v-model="deckColumnWidth" value="wide">{{ $t('@._settings.deck-column-width-wide') }}</ui-radio>
+			</section>
+			<section>
+				<header>{{ $t('@._settings.deckTemporaryColumnPosition') }}</header>
+				<ui-radio v-model="deckTemporaryColumnPosition" value="left">{{ $t('@._settings.deckTemporaryColumnPosition-left') }}</ui-radio>
+				<ui-radio v-model="deckTemporaryColumnPosition" value="right">{{ $t('@._settings.deckTemporaryColumnPosition-right') }}</ui-radio>
+				<ui-radio v-model="deckTemporaryColumnPosition" value="specify">{{ $t('@._settings.deckTemporaryColumnPosition-specify') }}</ui-radio>
+				<ui-select v-if="deckTemporaryColumnPosition === 'specify'" v-model="deckTemporaryColumnIndex" style="margin-bottom: 0 !important;">
+					<option value="1">{{ $t('@._settings.deckTemporaryColumnIndex-1') }}</option>
+					<option value="2">{{ $t('@._settings.deckTemporaryColumnIndex-2') }}</option>
+					<option value="3">{{ $t('@._settings.deckTemporaryColumnIndex-3') }}</option>
+					<option value="4">{{ $t('@._settings.deckTemporaryColumnIndex-4') }}</option>
+					<option value="5">{{ $t('@._settings.deckTemporaryColumnIndex-5') }}</option>
+					<option value="6">{{ $t('@._settings.deckTemporaryColumnIndex-6') }}</option>
+					<option value="7">{{ $t('@._settings.deckTemporaryColumnIndex-7') }}</option>
+					<option value="8">{{ $t('@._settings.deckTemporaryColumnIndex-8') }}</option>
+				</ui-select>
 			</section>
 			<section>
 				<ui-switch v-model="games_reversi_showBoardLabels">{{ $t('@._settings.show-reversi-board-labels') }}</ui-switch>
@@ -192,6 +213,15 @@
 				<ui-switch v-model="enableSounds">{{ $t('@._settings.enable-sounds') }}
 					<template #desc>{{ $t('@._settings.enable-sounds-desc') }}</template>
 				</ui-switch>
+				<ui-switch :disabled="!enableSounds" v-model="enableMobileSounds">{{ $t('@._settings.enable-mobile-sounds') }}
+				</ui-switch>
+				<ui-switch :disabled="!enableSounds" v-model="enableSoundsInTimeline">{{ $t('@._settings.enable-sounds-timeline') }}
+				</ui-switch>
+				<ui-switch :disabled="!enableSoundsInTimeline" v-model="soundsNoScrollTop">{{ $t('@._settings.sounds-no-scroll-top') }}
+					<template #desc>Depends on {{ $t('@._settings.enable-sounds-timeline') }}</template>
+				</ui-switch>
+				<ui-switch :disabled="!enableSounds" v-model="enableSoundsInNotifications">{{ $t('@._settings.enable-sounds-notifications') }}
+				</ui-switch>
 				<label>{{ $t('@._settings.volume') }}</label>
 				<input type="range"
 					v-model="soundVolume"
@@ -200,6 +230,12 @@
 					step="0.1"
 				/>
 				<ui-button @click="soundTest"><fa icon="volume-up"/> {{ $t('@._settings.test') }}</ui-button>
+			</section>
+
+			<section>
+				<ui-switch v-model="enableSpeech">{{ $t('@._settings.enable-speech') }}
+					<template #desc>{{ $t('@._settings.enable-speech-desc') }}</template>
+				</ui-switch>
 			</section>
 		</ui-card>
 
@@ -228,16 +264,14 @@
 		<x-mute-and-block/>
 	</template>
 
-	<!--
 	<template v-if="page == null || page == 'apps'">
 		<ui-card>
-			<template #title><fa icon="puzzle-piece"/> {{ $t('@._settings.apps') }}</template>
+			<template #title><fa icon="puzzle-piece"/> wip:{{ $t('@._settings.apps') }}</template>
 			<section>
 				<x-apps/>
 			</section>
 		</ui-card>
 	</template>
-	-->
 
 	<template v-if="page == null || page == 'security'">
 		<ui-card>
@@ -254,14 +288,12 @@
 			</section>
 		</ui-card>
 
-		<!--
 		<ui-card>
 			<template #title><fa icon="sign-in-alt"/> {{ $t('@._settings.signin') }}</template>
 			<section>
 				<x-signins/>
 			</section>
 		</ui-card>
-		-->
 	</template>
 
 	<template v-if="page == null || page == 'api'">
@@ -286,12 +318,20 @@
 			</section>
 		</ui-card>
 
+		<x-account-info/>
+
 		<ui-card>
 			<template #title><fa icon="cogs"/> {{ $t('@._settings.advanced-settings') }}</template>
 			<section>
-				<ui-switch v-model="debug">
+				<ui-switch v-model="showAdvancedSettings">
+					{{ $t('@._settings.ShowAdvancedSettings') }}
+				</ui-switch>
+				<ui-switch v-model="debug" v-if="isAdvanced">
 					{{ $t('@._settings.debug-mode') }}<template #desc>{{ $t('@._settings.debug-mode-desc') }}</template>
 				</ui-switch>
+				<section v-if="isAdvanced">
+					<x-reg-edit/>
+				</section>
 			</section>
 		</ui-card>
 	</template>
@@ -306,6 +346,7 @@ import XApps from './apps.vue';
 import XSignins from './signins.vue';
 import XTags from './tags.vue';
 import XIntegration from './integration.vue';
+import XAccountInfo from './account-info.vue';
 import XTheme from './theme.vue';
 import XDrive from './drive.vue';
 import XMuteAndBlock from './mute-and-block.vue';
@@ -315,6 +356,7 @@ import XApi from './api.vue';
 import XLanguage from './language.vue';
 import XAppType from './app-type.vue';
 import XNotification from './notification.vue';
+import XRegEdit from './regedit.vue';
 import MkReactionPicker from '../reaction-picker.vue';
 
 import { url, version, instanceHost } from '../../../../config';
@@ -330,6 +372,7 @@ export default Vue.extend({
 		XSignins,
 		XTags,
 		XIntegration,
+		XAccountInfo,
 		XTheme,
 		XDrive,
 		XMuteAndBlock,
@@ -338,6 +381,7 @@ export default Vue.extend({
 		XApi,
 		XLanguage,
 		XAppType,
+		XRegEdit,
 		XNotification,
 	},
 	props: {
@@ -360,6 +404,10 @@ export default Vue.extend({
 		};
 	},
 	computed: {
+		isAdvanced(): boolean {
+			return this.$store.state.device.showAdvancedSettings;
+		},
+
 		useOsDefaultEmojis: {
 			get() { return this.$store.state.device.useOsDefaultEmojis; },
 			set(value) { this.$store.commit('device/set', { key: 'useOsDefaultEmojis', value }); }
@@ -390,9 +438,44 @@ export default Vue.extend({
 			set(value) { this.$store.commit('device/set', { key: 'deckColumnWidth', value }); }
 		},
 
+		deckTemporaryColumnPosition: {
+			get() { return this.$store.state.device.deckTemporaryColumnPosition || 'right'; },
+			set(value) { this.$store.commit('device/set', { key: 'deckTemporaryColumnPosition', value }); }
+		},
+
+		deckTemporaryColumnIndex: {
+			get() { return this.$store.state.device.deckTemporaryColumnIndex || 1; },
+			set(value) { this.$store.commit('device/set', { key: 'deckTemporaryColumnIndex', value }); }
+		},
+
 		enableSounds: {
 			get() { return this.$store.state.device.enableSounds; },
 			set(value) { this.$store.commit('device/set', { key: 'enableSounds', value }); }
+		},
+
+		enableSoundsInTimeline: {
+			get() { return this.$store.state.device.enableSoundsInTimeline; },
+			set(value) { this.$store.commit('device/set', { key: 'enableSoundsInTimeline', value }); }
+		},
+
+		enableSoundsInNotifications: {
+			get() { return this.$store.state.device.enableSoundsInNotifications; },
+			set(value) { this.$store.commit('device/set', { key: 'enableSoundsInNotifications', value }); }
+		},
+
+		enableMobileSounds: {
+			get() { return this.$store.state.device.enableMobileSounds; },
+			set(value) { this.$store.commit('device/set', { key: 'enableMobileSounds', value }); }
+		},
+
+		soundsNoScrollTop: {
+			get() { return this.$store.state.device.soundsNoScrollTop; },
+			set(value) { this.$store.commit('device/set', { key: 'soundsNoScrollTop', value }); }
+		},
+
+		enableSpeech: {
+			get() { return this.$store.state.device.enableSpeech; },
+			set(value) { this.$store.commit('device/set', { key: 'enableSpeech', value }); }
 		},
 
 		soundVolume: {
@@ -403,6 +486,11 @@ export default Vue.extend({
 		debug: {
 			get() { return this.$store.state.device.debug; },
 			set(value) { this.$store.commit('device/set', { key: 'debug', value }); }
+		},
+
+		showAdvancedSettings: {
+			get() { return this.$store.state.device.showAdvancedSettings; },
+			set(value) { this.$store.commit('device/set', { key: 'showAdvancedSettings', value }); }
 		},
 
 		alwaysShowNsfw: {
@@ -428,6 +516,11 @@ export default Vue.extend({
 		roundedCorners: {
 			get() { return this.$store.state.device.roundedCorners; },
 			set(value) { this.$store.commit('device/set', { key: 'roundedCorners', value }); }
+		},
+
+		instanceTicker: {
+			get() { return this.$store.state.device.instanceTicker; },
+			set(value) { this.$store.commit('device/set', { key: 'instanceTicker', value }); }
 		},
 
 		lineWidth: {
@@ -649,7 +742,7 @@ export default Vue.extend({
 			});
 		},
 		soundTest() {
-			const sound = new Audio(`${url}/assets/message.mp3`);
+			const sound = new Audio(`${url}/assets/waon.mp3`);
 			sound.volume = this.$store.state.device.soundVolume;
 			sound.play();
 		},
@@ -662,7 +755,7 @@ export default Vue.extend({
 				reactions: this.reactions.trim().split('\n'),
 				showFocus: false,
 			});
-			picker.$once('chosen', reaction => {
+			picker.$once('chosen', ({ reaction } : { reaction: string }) => {
 				picker.close();
 			});
 		}
