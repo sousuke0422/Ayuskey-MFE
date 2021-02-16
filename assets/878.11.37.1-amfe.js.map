@@ -1,0 +1,1 @@
+{"version":3,"sources":["webpack://ayuskey-mfe/./src/misc/emojilist.ts"],"names":["emojilist"],"mappings":"2HACO,MAAMA,EAAY,EAAQ,Q","file":"878.11.37.1-amfe.js","sourcesContent":["// initial converted from https://github.com/muan/emojilib/commit/242fe68be86ed6536843b83f7e32f376468b38fb\nexport const emojilist = require('../emojilist.json');\n"],"sourceRoot":""}
