@@ -1,12 +1,7 @@
 import { version as current } from '../../config';
 
 export default async function($root: any, force = false, silent = false) {
-<<<<<<< HEAD
-	const meta = await $root.api('version');
-	const newer = meta.version;
-=======
 	return null; // サーバーのバージョンなんて気にすんな
->>>>>>> 2350400d1 (無闇矢鱈とリロードさせない close #1)
 
 	// const meta = await $root.getMeta(force);
 	// const newer = meta.version;
