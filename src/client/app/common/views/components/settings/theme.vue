@@ -25,10 +25,10 @@
 			<ui-select v-model="light" :placeholder="$t('light-theme')">
 				<template #label><fa :icon="faSun"/> {{ $t('light-theme') }}</template>
 				<optgroup :label="$t('light-themes')">
-					<option v-for="x in lightThemes" :value="x.id" :key="x.id">{{ x.name }}</option>
+					<option v-for="x in lightThemes" :value="x.id" :key="x.id" :style="getStyle(x)">{{ x.name }}</option>
 				</optgroup>
 				<optgroup :label="$t('dark-themes')">
-					<option v-for="x in darkThemes" :value="x.id" :key="x.id">{{ x.name }}</option>
+					<option v-for="x in darkThemes" :value="x.id" :key="x.id" :style="getStyle(x)">{{ x.name }}</option>
 				</optgroup>
 			</ui-select>
 		</label>
@@ -37,15 +37,16 @@
 			<ui-select v-model="dark" :placeholder="$t('dark-theme')">
 				<template #label><fa :icon="faMoon"/> {{ $t('dark-theme') }}</template>
 				<optgroup :label="$t('dark-themes')">
-					<option v-for="x in darkThemes" :value="x.id" :key="x.id">{{ x.name }}</option>
+					<option v-for="x in darkThemes" :value="x.id" :key="x.id" :style="getStyle(x)">{{ x.name }}</option>
 				</optgroup>
 				<optgroup :label="$t('light-themes')">
-					<option v-for="x in lightThemes" :value="x.id" :key="x.id">{{ x.name }}</option>
+					<option v-for="x in lightThemes" :value="x.id" :key="x.id" :style="getStyle(x)">{{ x.name }}</option>
 				</optgroup>
 			</ui-select>
 		</label>
 
 		<a href="https://assets.msky.cafe/theme/list" rel="noopener" target="_blank">{{ $t('find-more-theme') }}</a>
+		<a href="https://theme.teamblackcrystal.com/" rel="noopener" target="_blank">{{ $t('find-ayuki-theme') }}</a>
 
 		<details class="creator">
 			<summary><fa icon="palette"/> {{ $t('create-a-theme') }}</summary>
@@ -320,6 +321,14 @@ export default Vue.extend({
 				type: 'success',
 				text: this.$t('saved')
 			});
+		},
+
+		getStyle(theme: Theme) {
+			if (theme.vars && theme.vars.primary && theme.vars.secondary) {
+				return `color: ${theme.vars.primary}; background-color: ${theme.vars.secondary}`;
+			} else {
+				return ''
+			}
 		}
 	}
 });

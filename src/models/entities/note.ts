@@ -5,6 +5,7 @@ import { DriveFile } from './drive-file';
 import { id } from '../id';
 
 @Entity()
+@Index('IDX_NOTE_TAGS', { synchronize: false })
 export class Note {
 	@PrimaryColumn(id())
 	public id: string;
@@ -44,7 +45,7 @@ export class Note {
 	public renote: Note | null;
 
 	@Column('varchar', {
-		length: 8192, nullable: true
+		length: 10240, nullable: true
 	})
 	public text: string | null;
 
@@ -123,6 +124,12 @@ export class Note {
 		comment: 'The URI of a note. it will be null when the note is local.'
 	})
 	public uri: string | null;
+
+	@Column('varchar', {
+		length: 512, nullable: true,
+		comment: 'The human readable url of a note. it will be null when the note is local.'
+	})
+	public url: string | null;
 
 	@Column('integer', {
 		default: 0, select: false

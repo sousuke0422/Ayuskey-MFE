@@ -14,15 +14,24 @@ const apiUrl = `${location.origin}/api/`;
 self.addEventListener('install', ev => {
 	console.info('installed');
 
+	const requests = [
+		"/",
+		`/assets/desktop.${version}.js`,
+		`/assets/mobile.${version}.js`,
+		"/assets/error.jpg"
+	];
+
   ev.waitUntil(
 		caches.open(cacheName)
 			.then(cache => {
-				return cache.addAll([
-					"/",
-					`/assets/desktop.${version}.js`,
-					`/assets/mobile.${version}.js`,
-					"/assets/error.jpg"
-				]);
+				if (_ENV_ === "production") {
+					// 本番ではキャッシュ
+					console.info("Registered caches.");
+					return cache.addAll(requests);
+				} else {
+					// 開発時はキャッシュしない & 既にあるキャッシュを殺す
+					return cache.delete(requests);
+				}
 			})
 			.then(() => self.skipWaiting())
   );
@@ -69,5 +78,23 @@ self.addEventListener('push', ev => {
 			body: n.body,
 			icon: n.icon,
 		});
+	}));
+});
+
+self.addEventListener('notificationclick', function(event) {
+	event.notification.close();
+
+	// This looks to see if the current is already open and
+	// focuses if it is
+	event.waitUntil(clients.matchAll({
+		type: "window"
+	}).then(function(clientList) {
+		for (var i = 0; i < clientList.length; i++) {
+			var client = clientList[i];
+			if (client.url == '/' && 'focus' in client)
+				return client.focus();
+		}
+		if (clients.openWindow)
+			return clients.openWindow('/');
 	}));
 });

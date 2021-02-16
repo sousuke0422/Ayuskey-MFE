@@ -52,21 +52,30 @@ const defaultDeviceSettings = {
 	deckMode: false,
 	deckColumnAlign: 'center',
 	deckColumnWidth: 'normal',
-	useShadow: false,
+	useShadow: true,
+	deckTemporaryColumnPosition: 'right',
+	deckTemporaryColumnIndex: 1,
 	roundedCorners: true,
 	reduceMotion: false,
 	darkmode: true,
-	darkTheme: 'bb5a8287-a072-4b0a-8ae5-ea2a0d33f4f2',
+	darkTheme: 'dark',
+	disableBlur: false,
 	lightTheme: 'light',
 	lineWidth: 1,
 	fontSize: 0,
 	themes: [],
 	enableSounds: true,
+	enableSoundsInTimeline: true,
+	enableSoundsInNotifications: true,
+	enableMobileSounds: false,
+	soundsNoScrollTop: false,
 	soundVolume: 0.5,
 	mediaVolume: 0.5,
+	enableSpeech: false,
 	lang: null,
 	appTypeForce: 'auto',
 	debug: false,
+	showAdvancedSettings: false,
 	lightmode: false,
 	loadRawImages: false,
 	alwaysShowNsfw: false,
@@ -77,7 +86,9 @@ const defaultDeviceSettings = {
 	disableShowingAnimatedImages: false,
 	expandUsersPhotos: true,
 	expandUsersActivity: true,
+	showPostPreview: true,
 	enableMobileQuickNotificationView: false,
+	instanceTicker: 'remote', // none, remote, always
 	roomGraphicsQuality: 'medium',
 	roomUseOrthographicCamera: true,
 	activeEmojiCategoryName: undefined,
@@ -210,6 +221,52 @@ export default (os: MiOS) => new Vuex.Store({
 			deck.layout = deck.layout.map(ids => erase(id, ids));
 			deck.layout = deck.layout.filter(ids => ids.length > 0);
 			os.store.dispatch('settings/updateDeckProfile');
+		},
+
+		changeTemporaryColumn(state, id) {
+			const deck = state.settings.deckProfiles[state.device.deckProfile];
+
+			// ドラッグ先の縦位置
+			const x = deck.layout.findIndex(ids => ids.indexOf(id) != -1);
+			const leftEdge = x === 0;
+			const rightEdge = x === deck.layout.length - 1;
+
+			// 左端固定以外から左端に移動したら左端固定にする
+			if (state.device.deckTemporaryColumnPosition !== 'left' && leftEdge) {
+				state.device.deckTemporaryColumnPosition = 'left';
+				state.device.deckTemporaryColumnIndex = 1;
+				return;
+			}
+
+			// 右端固定以外から右端に移動したら右端固定にする
+			if (state.device.deckTemporaryColumnPosition !== 'right' && rightEdge) {
+				state.device.deckTemporaryColumnPosition = 'right';
+				state.device.deckTemporaryColumnIndex = 1;
+				return;
+			}
+
+			// 左端固定から移動した
+			if (leftEdge) {
+				state.device.deckTemporaryColumnPosition = 'specify';
+				state.device.deckTemporaryColumnIndex = x + 1;
+				return;
+			}
+
+			// 右端固定から移動した
+			if (rightEdge) {
+				state.device.deckTemporaryColumnPosition = 'specify';
+				state.device.deckTemporaryColumnIndex = x;
+				return;
+			}
+
+			// 中程から移動した
+			if (x < state.device.deckTemporaryColumnIndex) {
+				state.device.deckTemporaryColumnPosition = 'specify';
+				state.device.deckTemporaryColumnIndex = x;
+			} else {
+				state.device.deckTemporaryColumnPosition = 'specify';
+				state.device.deckTemporaryColumnIndex = x + 1;
+			}
 		},
 
 		swapDeckColumn(state, x) {
@@ -381,6 +438,15 @@ export default (os: MiOS) => new Vuex.Store({
 			state: defaultDeviceSettings,
 
 			mutations: {
+				overwrite(state, x) {
+					for (const k of Object.keys(state)) {
+						if (x[k] === undefined) delete state[k];
+					}
+					for (const k of Object.keys(x)) {
+						state[k] = x[k];
+					}
+				},
+
 				set(state, x: { key: string; value: any }) {
 					state[x.key] = x.value;
 				},

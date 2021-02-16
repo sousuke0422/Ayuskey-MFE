@@ -7,6 +7,10 @@ import { Emojis, Users, Apps, PollVotes, DriveFiles, NoteReactions, Followings, 
 import { ensure } from '../../prelude/ensure';
 import { SchemaType } from '../../misc/schema';
 import { awaitAll } from '../../prelude/await-all';
+import { Emoji } from '../entities/emoji';
+import { decodeReaction, convertLegacyReactions, convertLegacyReaction } from '../../misc/reaction-lib';
+import parseAcct from '../../misc/acct/parse';
+import { resolveUser } from '../../remote/resolve-user';
 
 export type PackedNote = SchemaType<typeof packedNoteSchema>;
 
@@ -129,31 +133,83 @@ export class NoteRepository extends Repository<Note> {
 			};
 		}
 
+		/**
+		 * 添付用emojisを解決する
+		 * @param emojiNames Note等に添付されたカスタム絵文字名 (:は含めない)
+		 * @param noteUserHost Noteのホスト
+		 * @param reactionNames Note等にリアクションされたカスタム絵文字名 (:は含めない)
+		 */
 		async function populateEmojis(emojiNames: string[], noteUserHost: string | null, reactionNames: string[]) {
-			const where = [] as {}[];
+			let all = [] as {
+				name: string,
+				url: string
+			}[];
 
+			const accts = emojiNames.filter(n => n.startsWith('@'));
+
+			// カスタム絵文字
 			if (emojiNames?.length > 0) {
-				where.push({
-					name: In(emojiNames),
-					host: noteUserHost
-				});
+				const tmp = await Emojis.find({
+					where: {
+						name: In(emojiNames),
+						host: noteUserHost
+					},
+					select: ['name', 'host', 'url']
+				}).then(emojis => emojis.map((emoji: Emoji) => {
+					return {
+						name: emoji.name,
+						url: emoji.url,
+					};
+				}));
+
+				all = concat([all, tmp]);
 			}
 
-			reactionNames = reactionNames?.filter(x => x.match(/^:[^:]+:$/)).map(x => x.replace(/:/g, ''));
+			if (accts.length > 0) { 
+				const tmp = await Promise.all(
+					accts
+						.map(acct => ({ acct, parsed: parseAcct(acct) }))
+						.map(async ({ acct, parsed }) => {
+							const user = await resolveUser(parsed.username.toLowerCase(), parsed.host || note.userHost).catch(() => null);
+							return ({ acct, user: user ? await Users.pack(user) : undefined })
+						})
+				).then(users => users.filter((u) => u.user != null).map(u => {
+					const res = {
+						name: u.acct,
+						url: u.user?.avatarUrl || ''
+					};
+					return res;
+				}));
 
-			if (reactionNames?.length > 0) {
-				where.push({
-					name: In(reactionNames),
-					host: null
-				});
+				all = concat([all, tmp]);
 			}
 
-			if (where.length === 0) return [];
 
-			return Emojis.find({
-				where,
-				select: ['name', 'host', 'url', 'aliases']
-			});
+			const customReactions = reactionNames?.map(x => decodeReaction(x)).filter(x => x.name);
+
+			if (customReactions?.length > 0) {
+				const where = [] as {}[];
+
+				for (const customReaction of customReactions) {
+					where.push({
+						name: customReaction.name,
+						host: customReaction.host
+					});
+				}
+
+				const tmp = await Emojis.find({
+					where,
+					select: ['name', 'host', 'url']
+				}).then(emojis => emojis.map((emoji: Emoji) => {
+					return {
+						name: `${emoji.name}@${emoji.host || '.'}`,	// @host付きでローカルは.
+						url: emoji.url,
+					};
+				}));
+				all = concat([all, tmp]);
+			}
+
+			return all;
 		}
 
 		async function populateMyReaction() {
@@ -163,7 +219,7 @@ export class NoteRepository extends Repository<Note> {
 			});
 
 			if (reaction) {
-				return reaction.reaction;
+				return convertLegacyReaction(reaction.reaction);
 			}
 
 			return undefined;
@@ -171,8 +227,8 @@ export class NoteRepository extends Repository<Note> {
 
 		let text = note.text;
 
-		if (note.name && note.uri) {
-			text = `【${note.name}】\n${(note.text || '').trim()}\n${note.uri}`;
+		if (note.name && (note.url || note.uri)) {
+			text = `【${note.name}】\n${(note.text || '').trim()}\n\n${note.url || note.uri}`;
 		}
 
 		const packed = await awaitAll({
@@ -189,7 +245,7 @@ export class NoteRepository extends Repository<Note> {
 			viaMobile: note.viaMobile || undefined,
 			renoteCount: note.renoteCount,
 			repliesCount: note.repliesCount,
-			reactions: note.reactions,
+			reactions: convertLegacyReactions(note.reactions),
 			tags: note.tags.length > 0 ? note.tags : undefined,
 			emojis: populateEmojis(note.emojis, host, Object.keys(note.reactions)),
 			fileIds: note.fileIds,
@@ -198,6 +254,7 @@ export class NoteRepository extends Repository<Note> {
 			renoteId: note.renoteId,
 			mentions: note.mentions.length > 0 ? note.mentions : undefined,
 			uri: note.uri || undefined,
+			url: note.url || undefined,
 
 			...(opts.detail ? {
 				reply: note.replyId ? this.pack(note.replyId, meId, {
@@ -219,7 +276,7 @@ export class NoteRepository extends Repository<Note> {
 		if (packed.user.isCat && packed.text) {
 			packed.text = nyaize(packed.text);
 		}
-
+		//TODO: 2020/10/28 お嬢様口調への変換追加
 		if (!opts.skipHide) {
 			await this.hideNote(packed, meId);
 		}

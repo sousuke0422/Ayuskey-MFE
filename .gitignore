@@ -1,6 +1,7 @@
 # Visual Studio Code
 /.vscode
 !/.vscode/extensions.json
+.history
 
 # Intelij-IDEA
 /.idea
@@ -11,7 +12,8 @@
 # config
 /.config/*
 !/.config/example.yml
-!/.config/mongo_initdb_example.js
+!/.config/sonic_example.cfg
+!/.config/sonic_docker_example.cfg
 
 # misskey
 /build

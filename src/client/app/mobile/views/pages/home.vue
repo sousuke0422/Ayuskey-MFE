@@ -20,10 +20,6 @@
 		</span>
 	</template>
 
-	<template #func>
-		<button @click="fn"><fa icon="pencil-alt"/></button>
-	</template>
-
 	<main>
 		<div class="nav" v-if="showNav">
 			<div class="bg" @click="showNav = false"></div>
@@ -175,7 +171,6 @@ main
 			$size = 16px
 
 			&:after
-				content ""
 				display block
 				position absolute
 				top -($size * 2)
@@ -192,6 +187,7 @@ main
 			left 0
 			width 100%
 			height 100%
+			backdrop-filter blur(4px)
 			background rgba(#000, 0.5)
 
 		> .body

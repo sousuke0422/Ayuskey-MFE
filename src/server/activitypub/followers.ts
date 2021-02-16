@@ -12,6 +12,8 @@ import { Users, Followings } from '../../models';
 import { LessThan } from 'typeorm';
 
 export default async (ctx: Router.RouterContext) => {
+	if (config.disableFederation) ctx.throw(404);
+
 	const userId = ctx.params.user;
 
 	// Get 'cursor' parameter
@@ -82,7 +84,7 @@ export default async (ctx: Router.RouterContext) => {
 		// index page
 		const rendered = renderOrderedCollection(partOf, user.followersCount, `${partOf}?page=true`);
 		ctx.body = renderActivity(rendered);
-		ctx.set('Cache-Control', 'private, max-age=0, must-revalidate');
+		ctx.set('Cache-Control', 'public, max-age=180');
 		setResponseType(ctx);
 	}
 };

@@ -32,7 +32,14 @@ export const meta = {
 			desc: {
 				'ja-JP': 'リアクションの種類'
 			}
-		}
+		},
+
+		dislike: {
+			validator: $.optional.bool,
+			desc: {
+				'ja-JP': 'きらい'
+			}
+		},
 	},
 
 	errors: {
@@ -40,12 +47,6 @@ export const meta = {
 			message: 'No such note.',
 			code: 'NO_SUCH_NOTE',
 			id: '033d0620-5bfe-4027-965d-980b0c85a3ea'
-		},
-
-		isMyNote: {
-			message: 'You can not react to your own notes.',
-			code: 'IS_MY_NOTE',
-			id: '7eeb9714-b047-43b5-b559-7b1b72810f53'
 		},
 
 		alreadyReacted: {
@@ -61,8 +62,7 @@ export default define(meta, async (ps, user) => {
 		if (e.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') throw new ApiError(meta.errors.noSuchNote);
 		throw e;
 	});
-	await createReaction(user, note, ps.reaction).catch(e => {
-		if (e.id === '2d8e7297-1873-4c00-8404-792c68d7bef0') throw new ApiError(meta.errors.isMyNote);
+	await createReaction(user, note, ps.reaction, !!ps.dislike).catch(e => {
 		if (e.id === '51c42bb4-931a-456b-bff7-e5a8a70dd298') throw new ApiError(meta.errors.alreadyReacted);
 		throw e;
 	});

@@ -5,6 +5,7 @@
 import * as fs from 'fs';
 import * as webpack from 'webpack';
 import * as chalk from 'chalk';
+import rndstr from 'rndstr';
 const { VueLoaderPlugin } = require('vue-loader');
 const HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
@@ -20,6 +21,7 @@ class WebpackOnBuildPlugin {
 }
 
 const isProduction = process.env.NODE_ENV == 'production';
+const isTesting = process.env.RK_MODE == 'testing';
 const useHardSource = process.env.MISSKEY_USE_HARD_SOURCE;
 
 const constants = require('./src/const.json');
@@ -27,6 +29,8 @@ const constants = require('./src/const.json');
 const locales = require('./locales');
 const meta = require('./package.json');
 const codename = meta.codename;
+
+const version = isProduction ? isTesting ? meta.version + '-' + rndstr({ length: 8, chars: '0-9a-z' }) : meta.version : meta.version + '-' + rndstr({ length: 8, chars: '0-9a-z' });
 
 const postcss = {
 	loader: 'postcss-loader',
@@ -55,6 +59,8 @@ module.exports = {
 			use: [{
 				loader: 'vue-loader',
 				options: {
+					scss: 'vue-style-loader!css-loader!sass-loader',
+					sass: 'vue-style-loader!css-loader!sass-loader?indentedSyntax',
 					cssSourceMap: false,
 					compilerOptions: {
 						preserveWhitespace: false
@@ -73,7 +79,9 @@ module.exports = {
 				}, {
 					loader: 'css-loader',
 					options: {
-						modules: true
+						modules: true,
+						esModule: false,
+						url: false,
 					}
 				}, postcss, {
 					loader: 'stylus-loader'
@@ -82,7 +90,11 @@ module.exports = {
 				use: [{
 					loader: 'vue-style-loader'
 				}, {
-					loader: 'css-loader'
+					loader: 'css-loader',
+					options: {
+						url: false,
+						esModule: false
+					}
 				}, postcss, {
 					loader: 'stylus-loader'
 				}]
@@ -92,14 +104,21 @@ module.exports = {
 			use: [{
 				loader: 'vue-style-loader'
 			}, {
-				loader: 'css-loader'
+				loader: 'css-loader',
+				options: {
+					esModule: false,
+				}
 			}, postcss]
 		}, {
 			test: /\.(eot|woff|woff2|svg|ttf)([?]?.*)$/,
 			loader: 'url-loader'
 		}, {
 			test: /\.json5$/,
-			loader: 'json5-loader'
+			loader: 'json5-loader',
+			options: {
+				esModule: false,
+			},
+			type: 'javascript/auto'
 		}, {
 			test: /\.ts$/,
 			exclude: /node_modules/,
@@ -111,17 +130,59 @@ module.exports = {
 					appendTsSuffixTo: [/\.vue$/]
 				}
 			}]
+		}, {
+			test: /\.scss?$/,
+			exclude: /node_modules/,
+			oneOf: [{
+				resourceQuery: /module/,
+				use: [{
+					loader: 'vue-style-loader'
+				}, {
+					loader: 'css-loader',
+					options: {
+						modules: true,
+						esModule: false, // TODO: trueにすると壊れる。Vue3移行の折にはtrueにできるかもしれない
+						url: false,
+					}
+				}, postcss, {
+					loader: 'sass-loader',
+					options: {
+						implementation: require('sass'),
+						sassOptions: {
+							fiber: require('fibers')
+						}
+					}
+				}]
+			}, {
+				use: [{
+					loader: 'vue-style-loader'
+				}, {
+					loader: 'css-loader',
+					options: {
+						url: false,
+						esModule: false, // TODO: trueにすると壊れる。Vue3移行の折にはtrueにできるかもしれない
+					}
+				}, postcss, {
+					loader: 'sass-loader',
+					options: {
+						implementation: require('sass'),
+						sassOptions: {
+							fiber: require('fibers')
+						}
+					}
+				}]
+			}]
 		}]
 	},
 	plugins: [
 		...(useHardSource ? [new HardSourceWebpackPlugin()] : []),
 		new ProgressBarPlugin({
-			format: chalk`  {cyan.bold yes we can} {bold [}:bar{bold ]} {green.bold :percent} {gray (:current/:total)} :elapseds`,
+			format: chalk`  {cyan.bold webpack} {bold [}:bar{bold ]} {green.bold :percent} :msg :elapseds`,
 			clear: false
 		}),
 		new webpack.DefinePlugin({
 			_COPYRIGHT_: JSON.stringify(constants.copyright),
-			_VERSION_: JSON.stringify(meta.version),
+			_VERSION_: JSON.stringify(version),
 			_CODENAME_: JSON.stringify(codename),
 			_LANGS_: JSON.stringify(Object.entries(locales).map(([k, v]: [string, any]) => [k, v && v.meta && v.meta.lang])),
 			_ENV_: JSON.stringify(process.env.NODE_ENV)
@@ -130,19 +191,18 @@ module.exports = {
 			'process.env.NODE_ENV': JSON.stringify(isProduction ? 'production' : 'development')
 		}),
 		new WebpackOnBuildPlugin((stats: any) => {
-			fs.writeFileSync('./built/meta.json', JSON.stringify({ version: meta.version }), 'utf-8');
+			fs.writeFileSync('./built/meta.json', JSON.stringify({ version }), 'utf-8');
 
 			fs.mkdirSync('./built/client/assets/locales', { recursive: true });
 
 			for (const [lang, locale] of Object.entries(locales))
 				fs.writeFileSync(`./built/client/assets/locales/${lang}.json`, JSON.stringify(locale), 'utf-8');
 		}),
-		new VueLoaderPlugin(),
-		new webpack.optimize.ModuleConcatenationPlugin()
+		new VueLoaderPlugin()
 	],
 	output: {
 		path: __dirname + '/built/client/assets',
-		filename: `[name].${meta.version}.js`,
+		filename: `[name].${version}.js`,
 		publicPath: `/assets/`
 	},
 	resolve: {
@@ -157,9 +217,10 @@ module.exports = {
 		modules: ['node_modules']
 	},
 	optimization: {
-		minimizer: [new TerserPlugin()]
+		minimizer: [new TerserPlugin({
+			parallel: 1
+		})]
 	},
-	cache: true,
 	devtool: 'source-map',
 	mode: isProduction ? 'production' : 'development'
 };

@@ -19,11 +19,17 @@ block og
 	meta(property='og:image'       content= page.eyeCatchingImage ? page.eyeCatchingImage.thumbnailUrl : user.avatarUrl)
 
 block meta
+	if user.host || profile.noCrawle
+		meta(name='robots' content='noindex')
+
 	meta(name='misskey:user-username' content=user.username)
 	meta(name='misskey:user-id' content=user.id)
 	meta(name='misskey:page-id' content=page.id)
 
 	meta(name='twitter:card' content='summary')
+
+	//if user.host
+	//	meta(name='robots' content='noindex')
 
 	// todo
 	if user.twitter

@@ -91,6 +91,13 @@ export const meta = {
 			}
 		},
 
+		isExplorable: {
+			validator: $.optional.bool,
+			desc: {
+				'ja-JP': 'isExplorable'
+			}
+		},
+
 		carefulBot: {
 			validator: $.optional.bool,
 			desc: {
@@ -105,6 +112,13 @@ export const meta = {
 			}
 		},
 
+		noCrawle: {
+			validator: $.optional.bool,
+			desc: {
+				'ja-JP': '検索エンジンによるインデックスを拒否するか否か'
+			}
+		},
+
 		isBot: {
 			validator: $.optional.bool,
 			desc: {
@@ -116,6 +130,13 @@ export const meta = {
 			validator: $.optional.bool,
 			desc: {
 				'ja-JP': '猫か否か'
+			}
+		},
+
+		isLady: {
+			validator: $.optional.bool,
+			desc: {
+				'ja-JP': 'お嬢様か否か'
 			}
 		},
 
@@ -190,10 +211,13 @@ export default define(meta, async (ps, user, app) => {
 	if (ps.avatarId !== undefined) updates.avatarId = ps.avatarId;
 	if (ps.bannerId !== undefined) updates.bannerId = ps.bannerId;
 	if (typeof ps.isLocked == 'boolean') updates.isLocked = ps.isLocked;
+	if (typeof ps.isExplorable == 'boolean') updates.isExplorable = ps.isExplorable;
 	if (typeof ps.isBot == 'boolean') updates.isBot = ps.isBot;
 	if (typeof ps.carefulBot == 'boolean') profileUpdates.carefulBot = ps.carefulBot;
 	if (typeof ps.autoAcceptFollowed == 'boolean') profileUpdates.autoAcceptFollowed = ps.autoAcceptFollowed;
+	if (typeof ps.noCrawle == 'boolean') profileUpdates.noCrawle = ps.noCrawle;
 	if (typeof ps.isCat == 'boolean') updates.isCat = ps.isCat;
+	if (typeof ps.isLady == 'boolean') updates.isLady = ps.isLady;
 	if (typeof ps.autoWatch == 'boolean') profileUpdates.autoWatch = ps.autoWatch;
 	if (typeof ps.alwaysMarkNsfw == 'boolean') profileUpdates.alwaysMarkNsfw = ps.alwaysMarkNsfw;
 
@@ -205,8 +229,8 @@ export default define(meta, async (ps, user, app) => {
 
 		updates.avatarUrl = DriveFiles.getPublicUrl(avatar, true);
 
-		if (avatar.properties.avgColor) {
-			updates.avatarColor = avatar.properties.avgColor;
+		if (avatar.blurhash) {
+			updates.avatarBlurhash = avatar.blurhash;
 		}
 	}
 
@@ -218,8 +242,8 @@ export default define(meta, async (ps, user, app) => {
 
 		updates.bannerUrl = DriveFiles.getPublicUrl(banner, false);
 
-		if (banner.properties.avgColor) {
-			updates.bannerColor = banner.properties.avgColor;
+		if (banner.blurhash) {
+			updates.bannerBlurhash = banner.blurhash;
 		}
 	}
 

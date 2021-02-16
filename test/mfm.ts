@@ -16,6 +16,7 @@ import * as assert from 'assert';
 
 import { parse, parsePlain } from '../src/mfm/parse';
 import { toHtml } from '../src/mfm/toHtml';
+import { fromHtml } from '../src/mfm/fromHtml';
 import { createTree as tree, createLeaf as leaf, MfmTree } from '../src/mfm/prelude';
 import { removeOrphanedBrackets } from '../src/mfm/language';
 
@@ -258,6 +259,17 @@ describe('MFM', () => {
 			]);
 		});
 
+		it('rotate', () => {
+			const tokens = parse('<rotate 90>foo</rotate>');
+			assert.deepStrictEqual(tokens, [
+				tree('rotate', [
+					text('foo')
+				], {
+					attr: '90'
+				}),
+			]);
+		});
+
 		describe('spin', () => {
 			it('text', () => {
 				const tokens = parse('<spin>foo</spin>');
@@ -335,6 +347,7 @@ describe('MFM', () => {
 		});
 
 		describe('motion', () => {
+			/*
 			it('by triple brackets', () => {
 				const tokens = parse('(((foo)))');
 				assert.deepStrictEqual(tokens, [
@@ -343,7 +356,9 @@ describe('MFM', () => {
 					], {}),
 				]);
 			});
+			*/
 
+			/*
 			it('by triple brackets (with other texts)', () => {
 				const tokens = parse('bar(((foo)))bar');
 				assert.deepStrictEqual(tokens, [
@@ -354,6 +369,7 @@ describe('MFM', () => {
 					text('bar'),
 				]);
 			});
+			*/
 
 			it('by <motion> tag', () => {
 				const tokens = parse('<motion>foo</motion>');
@@ -1298,5 +1314,39 @@ describe('MFM', () => {
 			], {}),
 			leaf('blockCode', { code: 'after', lang: null })
 		]);
+	});
+});
+
+describe('fromHtml', () => {
+	it('br', () => {
+		assert.deepStrictEqual(fromHtml('<p>abc<br><br/>d</p>'), 'abc\n\nd');
+	});
+
+	it('link with different text', () => {
+		assert.deepStrictEqual(fromHtml('<p>a <a href="https://example.com/b">c</a> d</p>'), 'a [c](https://example.com/b) d');
+	});
+
+	it('link with same text', () => {
+		assert.deepStrictEqual(fromHtml('<p>a <a href="https://example.com/b">https://example.com/b</a> d</p>'), 'a https://example.com/b d');
+	});
+
+	it('link with same text, but not encoded', () => {
+		assert.deepStrictEqual(fromHtml('<p>a <a href="https://example.com/ä">https://example.com/ä</a> d</p>'), 'a <https://example.com/ä> d');
+	});
+
+	it('link with no url', () => {
+		assert.deepStrictEqual(fromHtml('<p>a <a href="b">c</a> d</p>'), 'a [c](b) d');
+	});
+
+	it('link without href', () => {
+		assert.deepStrictEqual(fromHtml('<p>a <a>c</a> d</p>'), 'a c d');
+	});
+
+	it('mention', () => {
+		assert.deepStrictEqual(fromHtml('<p>a <a href="https://example.com/@user" class="u-url mention">@user</a> d</p>'), 'a @user@example.com d');
+	});
+
+	it('hashtag', () => {
+		assert.deepStrictEqual(fromHtml('<p>a <a href="https://example.com/tags/a">#a</a> d</p>', ['#a']), 'a #a d');
 	});
 });

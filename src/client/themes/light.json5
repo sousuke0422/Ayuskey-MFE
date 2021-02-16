@@ -2,14 +2,14 @@
 	id: 'light',
 
 	name: 'Light',
-	author: 'syuilo',
+	author: 'yupix',
 	desc: 'Default light theme',
 	kind: 'light',
 
 	vars: {
-		primary: '#f18570',
-		secondary: '#fff',
-		text: '#666',
+		primary: '#709df1',
+		secondary: '#ffffff',
+		text: '#666666',
 	},
 
 	props: {
@@ -33,9 +33,10 @@
 		switchActiveTrack: ':alpha<0.4<@switchActive',
 		radioActive: '$primary',
 
-		face: '$secondary',
+		face: ':alpha<0.9<$secondary',
 		faceText: '$text',
 		faceHeader: ':lighten<5<$secondary',
+		faceHeaderA: ':lightenA<5<$secondary',
 		faceHeaderText: '$text',
 		faceDivider: 'rgba(0, 0, 0, 0.082)',
 		faceTextButton: ':alpha<0.7<$text',
@@ -72,6 +73,7 @@
 		modalBackdrop: 'rgba(0, 0, 0, 0.1)',
 
 		dateDividerBg: ':darken<2<$secondary',
+		dateDividerBgA: ':darkenA<2<$secondary',
 		dateDividerFg: ':alpha<0.7<$text',
 
 		switchTrack: 'rgba(0, 0, 0, 0.25)',
@@ -145,7 +147,7 @@
 		infoWarnBg: '#fff0db',
 		infoWarnFg: '#573c08',
 
-		messagingRoomBg: '#fff',
+		messagingRoomBg: ':lighten<5<$secondary',
 		messagingRoomInfo: '#000',
 		messagingRoomDateDividerLine: 'rgba(0, 0, 0, 0.1)',
 		messagingRoomDateDividerText: 'rgba(0, 0, 0, 0.3)',
@@ -161,6 +163,7 @@
 		formButtonActiveBg: ':alpha<0.12<$primary',
 
 		desktopHeaderBg: ':lighten<5<$secondary',
+		desktopHeaderBgA: ':lightenA<5<$secondary',
 		desktopHeaderFg: '$text',
 		desktopHeaderHoverFg: ':darken<7<$text',
 		desktopHeaderSearchBg: 'rgba(0, 0, 0, 0.05)',

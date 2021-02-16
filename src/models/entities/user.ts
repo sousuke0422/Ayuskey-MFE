@@ -106,14 +106,14 @@ export class User {
 	public bannerUrl: string | null;
 
 	@Column('varchar', {
-		length: 32, nullable: true,
+		length: 128, nullable: true,
 	})
-	public avatarColor: string | null;
+	public avatarBlurhash: string | null;
 
 	@Column('varchar', {
-		length: 32, nullable: true,
+		length: 128, nullable: true,
 	})
-	public bannerColor: string | null;
+	public bannerBlurhash: string | null;
 
 	@Column('boolean', {
 		default: false,
@@ -147,6 +147,12 @@ export class User {
 
 	@Column('boolean', {
 		default: false,
+		comment: 'Whether the User is a Lady.'
+	})
+	public isLady: boolean;
+
+	@Column('boolean', {
+		default: false,
 		comment: 'Whether the User is the admin.'
 	})
 	public isAdmin: boolean;
@@ -156,6 +162,23 @@ export class User {
 		comment: 'Whether the User is a moderator.'
 	})
 	public isModerator: boolean;
+
+	@Column('boolean', {
+		default: false,
+	})
+	public isVerified: boolean;
+
+	@Column('boolean', {
+		default: false,
+	})
+	public isPremium: boolean;
+
+	@Index()
+	@Column('boolean', {
+		default: true,
+		comment: 'Whether the User is explorable.'
+	})
+	public isExplorable: boolean;
 
 	@Column('varchar', {
 		length: 128, array: true, default: '{}'

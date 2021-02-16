@@ -24,18 +24,28 @@ export type Source = {
 		db?: number;
 		prefix?: string;
 	};
-	elasticsearch: {
+	elasticsearch?: {
 		host: string;
 		port: number;
 		pass: string;
 		index?: string;
 		ssl?: boolean;
 	};
+	sonic?: {
+		host: string;
+		port: number;
+		pass: string;
+		index?: string;
+	};
 
 	autoAdmin?: boolean;
 
+	disableFederation?: boolean;
+	disableUrlPreview?: boolean;
+
 	proxy?: string;
 	proxySmtp?: string;
+	proxyBypassHosts?: string[];
 
 	accesslog?: string;
 
@@ -58,6 +68,8 @@ export type Source = {
 	};
 
 	mediaProxy?: string;
+
+	signToActivityPubGet?: boolean;
 };
 
 /**

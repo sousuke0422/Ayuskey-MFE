@@ -7,9 +7,9 @@
 	kind: 'dark',
 
 	vars: {
-		primary: '#fb4e4e',
-		secondary: '#282C37',
-		text: '#d6dae0',
+		primary: '#99CC00',
+		secondary: '#272727',
+		text: '#C7D1D8',
 	},
 
 	props: {
@@ -33,9 +33,10 @@
 		switchActiveTrack: ':alpha<0.4<@switchActive',
 		radioActive: '$primary',
 
-		face: '$secondary',
+		face: ':alpha<0.6<$secondary',
 		faceText: '#fff',
 		faceHeader: ':lighten<5<$secondary',
+		faceHeaderA: ':lightenA<5<$secondary',
 		faceHeaderText: '$text',
 		faceDivider: 'rgba(0, 0, 0, 0.3)',
 		faceTextButton: '$text',
@@ -72,6 +73,7 @@
 		modalBackdrop: 'rgba(0, 0, 0, 0.5)',
 
 		dateDividerBg: ':darken<2<$secondary',
+		dateDividerBgA: ':darkenA<2<$secondary',
 		dateDividerFg: ':alpha<0.7<$text',
 
 		switchTrack: 'rgba(255, 255, 255, 0.15)',
@@ -145,7 +147,7 @@
 		infoWarnBg: '#42321c',
 		infoWarnFg: '#ffbd3e',
 
-		messagingRoomBg: '@bg',
+		messagingRoomBg: ':lighten<5<$secondary',
 		messagingRoomInfo: '#fff',
 		messagingRoomDateDividerLine: 'rgba(255, 255, 255, 0.1)',
 		messagingRoomDateDividerText: 'rgba(255, 255, 255, 0.3)',
@@ -161,6 +163,7 @@
 		formButtonActiveBg: ':alpha<0.12<$primary',
 
 		desktopHeaderBg: ':lighten<5<$secondary',
+		desktopHeaderBgA: ':lightenA<5<$secondary',
 		desktopHeaderFg: '$text',
 		desktopHeaderHoverFg: '#fff',
 		desktopHeaderSearchBg: 'rgba(0, 0, 0, 0.1)',

@@ -15,7 +15,7 @@
 						<mk-avatar class="avatar" :user="notification.user"/>
 						<div class="text">
 							<header>
-								<mk-reaction-icon :reaction="notification.reaction" class="icon"/>
+								<mk-reaction-icon :reaction="notification.reaction" :custom-emojis="notification.note.emojis" class="icon"/>
 								<router-link :to="notification.user | userPage" v-user-preview="notification.user.id" class="name">
 									<mk-user-name :user="notification.user"/>
 								</router-link>
@@ -160,6 +160,7 @@ import Vue from 'vue';
 import i18n from '../../../i18n';
 import getNoteSummary from '../../../../../misc/get-note-summary';
 import paging from '../../../common/scripts/paging';
+import * as config from '../../../config';
 
 export default Vue.extend({
 	i18n: i18n(),
@@ -226,6 +227,14 @@ export default Vue.extend({
 			});
 
 			this.prepend(notification);
+			this.notifications.unshift(notification);
+
+			// サウンドを再生する
+			if (this.$store.state.device.enableSounds && this.$store.state.device.enableSoundsInNotifications) {
+				const sound = new Audio(`${config.url}/assets/pope2.mp3`);
+				sound.volume = this.$store.state.device.soundVolume;
+				sound.play();
+			}
 		}
 	}
 });

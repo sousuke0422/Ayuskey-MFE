@@ -15,6 +15,7 @@
 		<mk-avatar class="avatar" :user="appearNote.user" v-if="$store.state.device.postStyle != 'smart'"/>
 		<div class="main">
 			<mk-note-header class="header" :note="appearNote" :mini="true"/>
+			<x-instance-ticker v-if="$store.state.device.instanceTicker != 'none'" :instance="appearNote.user.instance" />
 			<div class="body" v-if="appearNote.deletedAt == null">
 				<p v-if="appearNote.cw != null" class="cw">
 				<mfm v-if="appearNote.cw != ''" class="text" :text="appearNote.cw" :author="appearNote.user" :i="$store.state.i" :custom-emojis="appearNote.emojis" />
@@ -37,7 +38,7 @@
 				</div>
 				<span class="app" v-if="appearNote.app && $store.state.settings.showVia">via <b>{{ appearNote.app.name }}</b></span>
 			</div>
-			<footer v-if="appearNote.deletedAt == null" class="footer">
+			<footer v-if="appearNote.deletedAt == null && !preview" class="footer">
 				<mk-reactions-viewer :note="appearNote" ref="reactionsViewer"/>
 				<button @click="reply()" class="button">
 					<template v-if="appearNote.reply"><fa icon="reply-all"/></template>
@@ -50,10 +51,10 @@
 				<button v-else class="button">
 					<fa icon="ban"/>
 				</button>
-				<button v-if="!isMyNote && appearNote.myReaction == null" class="button" @click="react()" ref="reactButton">
+				<button v-if="appearNote.myReaction == null" class="button" @click="react()" ref="reactButton">
 					<fa icon="plus"/>
 				</button>
-				<button v-if="!isMyNote && appearNote.myReaction != null" class="button reacted" @click="undoReact(appearNote)" ref="reactButton">
+				<button v-if="appearNote.myReaction != null" class="button reacted" @click="undoReact(appearNote)" ref="reactButton">
 					<fa icon="minus"/>
 				</button>
 				<button class="button" @click="menu()" ref="menuButton">
@@ -72,13 +73,15 @@ import Vue from 'vue';
 import i18n from '../../../i18n';
 
 import XSub from './note.sub.vue';
+import XInstanceTicker from '../../../common/views/components/instance-ticker.vue';
 import noteMixin from '../../../common/scripts/note-mixin';
 import noteSubscriber from '../../../common/scripts/note-subscriber';
 
 export default Vue.extend({
 	i18n: i18n('mobile/views/components/note.vue'),
 	components: {
-		XSub
+		XSub,
+		XInstanceTicker
 	},
 
 	mixins: [
@@ -94,6 +97,11 @@ export default Vue.extend({
 			required: true
 		},
 		detail: {
+			type: Boolean,
+			required: false,
+			default: false
+		},
+		preview: {
 			type: Boolean,
 			required: false,
 			default: false
@@ -127,6 +135,13 @@ export default Vue.extend({
 			}).then(conversation => {
 				this.conversation = conversation.reverse();
 			});
+		}
+	},
+	methods: {
+		showTicker() {
+			if (this.$store.state.device.instanceTicker === 'always') return true;
+			if (this.$store.state.device.instanceTicker === 'remote' && this.appearNote.user.instance) return true;
+			return false;
 		}
 	}
 });

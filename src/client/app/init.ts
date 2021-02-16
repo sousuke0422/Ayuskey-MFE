@@ -3,12 +3,15 @@
  */
 
 import Vue from 'vue';
+import VueCompositionAPI from '@vue/composition-api';
 import Vuex from 'vuex';
 import VueRouter from 'vue-router';
 import VAnimateCss from 'v-animate-css';
 import VModal from 'vue-js-modal';
 import VueI18n from 'vue-i18n';
 import SequentialEntrance from 'vue-sequential-entrance';
+import * as hljs from 'highlight.js';
+import 'highlight.js/styles/monokai.css';
 
 import VueHotkey from './common/hotkey';
 import VueSize from './common/size';
@@ -16,11 +19,11 @@ import App from './app.vue';
 import checkForUpdate from './common/scripts/check-for-update';
 import MiOS from './mios';
 import { version, codename, lang, locale } from './config';
-import { builtinThemes, applyTheme, futureTheme } from './theme';
+import { builtinThemes, applyTheme, darkTheme } from './theme';
 import Dialog from './common/views/components/dialog.vue';
 
 if (localStorage.getItem('theme') == null) {
-	applyTheme(futureTheme);
+	applyTheme(darkTheme);
 }
 
 //#region FontAwesome
@@ -127,6 +130,16 @@ import {
 	faHourglassHalf,
 	faGavel,
 	faUndoAlt,
+	faCode,
+	faTh,
+	faMars,
+	faVenus,
+	faGenderless,
+	faUserFriends,
+	faFish,
+	faComment,
+	faQuestionCircle,
+	faCrown,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -260,6 +273,16 @@ library.add(
 	faHourglassHalf,
 	faGavel,
 	faUndoAlt,
+	faCode,
+	faTh,
+	faMars,
+	faVenus,
+	faGenderless,
+	faUserFriends,
+	faFish,
+	faComment,
+	faQuestionCircle,
+	faCrown,
 
 	farBell,
 	farEnvelope,
@@ -290,6 +313,7 @@ library.add(
 //#endregion
 
 Vue.use(Vuex);
+Vue.use(VueCompositionAPI);
 Vue.use(VueRouter);
 Vue.use(VAnimateCss);
 Vue.use(VModal);
@@ -297,6 +321,7 @@ Vue.use(VueHotkey);
 Vue.use(VueSize);
 Vue.use(VueI18n);
 Vue.use(SequentialEntrance);
+Vue.use(hljs.vuePlugin);
 
 Vue.component('fa', FontAwesomeIcon);
 
@@ -326,7 +351,8 @@ Vue.mixin({
  * APP ENTRY POINT!
  */
 
-console.info(`Misskey v${version} (${codename})`);
+console.info(`Misskey v11.37.1 (daybreak)`);
+console.info(`Ayuskey v${version} (${codename})`);
 console.info(
 	`%c${locale['common']['do-not-copy-paste']}`,
 	'color: red; background: yellow; font-size: 16px; font-weight: bold;');

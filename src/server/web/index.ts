@@ -22,10 +22,16 @@ import { ensure } from '../../prelude/ensure';
 import { getConnection } from 'typeorm';
 import redis from '../../db/redis';
 
+const env = process.env.NODE_ENV;
+
 const client = `${__dirname}/../../client/`;
 
 // Init app
 const app = new Koa();
+
+const setCache = (ctx: Koa.ParameterizedContext, onProduction: string) => {
+	ctx.set('Cache-Control', env === 'production' ? onProduction : 'no-store');
+};
 
 // Init renderer
 app.use(views(__dirname + '/views', {
@@ -36,7 +42,7 @@ app.use(views(__dirname + '/views', {
 }));
 
 // Serve favicon
-app.use(favicon(`${client}/assets/favicon.ico`));
+app.use(favicon(`${client}/assets/favicon.png`));
 
 // Common request handler
 app.use(async (ctx, next) => {
@@ -51,6 +57,9 @@ const router = new Router();
 //#region static assets
 
 router.get('/assets/*', async ctx => {
+	if (env !== 'production') {
+		ctx.set('Cache-Control', 'no-store');
+	}
 	await send(ctx as any, ctx.path, {
 		root: client,
 		maxage: ms('7 days'),
@@ -169,7 +178,7 @@ router.get(['/@:user', '/@:user/:sub'], async (ctx, next) => {
 			instanceName: meta.name || 'Misskey',
 			icon: meta.iconUrl
 		});
-		ctx.set('Cache-Control', 'public, max-age=30');
+		setCache(ctx, 'public, max-age=30');
 	} else {
 		// リモートユーザーなので
 		// モデレータがAPI経由で参照可能にするために404にはしない
@@ -198,18 +207,35 @@ router.get('/notes/:note', async ctx => {
 
 	if (note) {
 		const _note = await Notes.pack(note);
+		const profile = await UserProfiles.findOne(note.userId).then(ensure);
+
+		let imageUrl;
+		// use attached
+		if (_note.files) {
+			imageUrl = _note.files
+				.filter((file: any) => file.type.match(/^(image|video)/) && !file.isSensitive)
+				.map((file: any) => file.thumbnailUrl)
+				.shift();
+		}
+		// or avatar
+		if (imageUrl == null || imageUrl === '') {
+			imageUrl = (_note.user as any).avatarUrl;
+		}
+
 		const meta = await fetchMeta();
 		await ctx.render('note', {
 			note: _note,
+			profile,
 			summary: getNoteSummary(_note),
+			imageUrl,
 			instanceName: meta.name || 'Misskey',
 			icon: meta.iconUrl
 		});
 
 		if (['public', 'home'].includes(note.visibility)) {
-			ctx.set('Cache-Control', 'public, max-age=180');
+			setCache(ctx, 'public, max-age=180');
 		} else {
-			ctx.set('Cache-Control', 'private, max-age=0, must-revalidate');
+			setCache(ctx, 'private, max-age=0, must-revalidate');
 		}
 
 		return;
@@ -235,16 +261,18 @@ router.get('/@:user/pages/:page', async ctx => {
 
 	if (page) {
 		const _page = await Pages.pack(page);
+		const profile = await UserProfiles.findOne(page.userId).then(ensure);
 		const meta = await fetchMeta();
 		await ctx.render('page', {
 			page: _page,
+			profile,
 			instanceName: meta.name || 'Misskey'
 		});
 
 		if (['public'].includes(page.visibility)) {
-			ctx.set('Cache-Control', 'public, max-age=180');
+			setCache(ctx, 'public, max-age=180');
 		} else {
-			ctx.set('Cache-Control', 'private, max-age=0, must-revalidate');
+			setCache(ctx, 'private, max-age=0, must-revalidate');
 		}
 
 		return;
@@ -283,6 +311,13 @@ const override = (source: string, target: string, depth: number = 0) =>
 router.get('/othello', async ctx => ctx.redirect(override(ctx.URL.pathname, 'games/reversi', 1)));
 router.get('/reversi', async ctx => ctx.redirect(override(ctx.URL.pathname, 'games')));
 
+// streamingに非WebSocketリクエストが来た場合にbase htmlをキャシュ付きで返すと、Proxy等でそのパスがキャッシュされておかしくなる
+router.get('/streaming', async ctx => {
+	console.log(`UNEXPECTED_STREAMING Request ${ctx.path}`);
+	ctx.status = 503;
+	ctx.set('Cache-Control', 'private, max-age=0');
+});
+
 // Render base html for all requests
 router.get('*', async ctx => {
 	const meta = await fetchMeta();
@@ -293,7 +328,7 @@ router.get('*', async ctx => {
 		desc: meta.description,
 		icon: meta.iconUrl
 	});
-	ctx.set('Cache-Control', 'public, max-age=300');
+	setCache(ctx, 'public, max-age=300');
 });
 
 // Register router

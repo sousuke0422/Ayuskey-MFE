@@ -4,15 +4,16 @@ import { registerOrFetchInstanceDoc } from '../../services/register-or-fetch-ins
 import Logger from '../../services/logger';
 import { Instances } from '../../models';
 import { instanceChart } from '../../services/chart';
-import { fetchNodeinfo } from '../../services/fetch-nodeinfo';
+import { fetchInstanceMetadata } from '../../services/fetch-instance-metadata';
 import { fetchMeta } from '../../misc/fetch-meta';
 import { toPuny } from '../../misc/convert-host';
+import { DeliverJobData } from '../type';
 
 const logger = new Logger('deliver');
 
 let latest: string | null = null;
 
-export default async (job: Bull.Job) => {
+export default async (job: Bull.Job<DeliverJobData>) => {
 	const { host } = new URL(job.data.to);
 
 	// ブロックしてたら中断
@@ -21,15 +22,15 @@ export default async (job: Bull.Job) => {
 		return 'skip (blocked)';
 	}
 
-	// closedなら中断
-	const closedHosts = await Instances.find({
+	// isSuspendedなら中断
+	const suspendedHosts = await Instances.find({
 		where: {
-			isMarkedAsClosed: true
+			isSuspended: true
 		},
 		cache: 60 * 1000
 	});
-	if (closedHosts.map(x => x.host).includes(toPuny(host))) {
-		return 'skip (closed)';
+	if (suspendedHosts.map(x => x.host).includes(toPuny(host))) {
+		return 'skip (suspended)';
 	}
 
 	try {
@@ -48,7 +49,7 @@ export default async (job: Bull.Job) => {
 				isNotResponding: false
 			});
 
-			fetchNodeinfo(i);
+			fetchInstanceMetadata(i);
 
 			instanceChart.requestSent(i.host, true);
 		});
