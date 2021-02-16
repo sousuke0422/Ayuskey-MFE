@@ -68,7 +68,7 @@ export default Vue.extend({
 					self.$store.commit('pushBehindNote', note);
 				}
 
-				if (self.isScrollTop() || self.$store.state.device.soundsNoScrollTop) {
+				if (self.isScrollTop()) {
 					// サウンドを再生する
 					if (self.$store.state.device.enableSounds && self.$store.state.device.enableSoundsInTimeline && !silent) {
 						const sound = new Audio(note.userId === self.$store.state.i.id

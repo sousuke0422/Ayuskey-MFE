@@ -85,6 +85,7 @@ common:
   following: "フォロー中"
   followers: "フォロワー"
   favorites: "お気に入り"
+  aboutInstance: "このインスタンスについて"
 
   permissions:
     "read:account": "アカウントの情報を見る"
@@ -303,8 +304,6 @@ common:
     enable-sounds-desc: "投稿やメッセージを送受信したときなどにサウンドを再生します。この設定はブラウザに記憶されます。"
     enable-sounds-timeline: "タイムライン"
     enable-sounds-notifications: "通知"
-    enable-mobile-sounds: "モバイルクライアントでも音を鳴らす"
-    sounds-no-scroll-top: "一番上にいなくても音を鳴らす"
     enable-speech: "読み上げを有効にする"
     enable-speech-desc: "投稿が到着したときに読み上げます。この設定はブラウザに記憶されます。"
     volume: "ボリューム"
@@ -455,6 +454,16 @@ common/views/pages/explore.vue:
 common/views/components/reactions-viewer.details.vue:
   few-users: "{users}が{reaction}をリアクション"
   many-users: "{users}と他{omitted}人が{reaction}をリアクション"
+
+common/views/pages/about.vue:
+  about: "{host} について"
+  basic: "基本"
+  maintainerName: "管理者"
+  maintainerEmail: "連絡先"
+  stats: "統計"
+  users: "ユーザー数"
+  notes: "投稿数"
+  instances: "インスタンス数"
 
 common/views/components/url-preview.vue:
   enable-player: "プレイヤーを開く"
@@ -1986,6 +1995,7 @@ mobile/views/components/ui.nav.vue:
   game: "ゲーム"
   admin: "管理"
   about: "Misskeyについて"
+  aboutInstance: "このインスタンスについて"
 
 mobile/views/pages/drive.vue:
   contextmenu:
