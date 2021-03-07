@@ -96,7 +96,6 @@
 						<template #prefix><fa :icon="faEnvelope"/></template>
 					</ui-input>
 				</ui-horizon-group>
-				<ui-switch v-model="instance.isBlocked" @change="updateInstance()">{{ $t('block') }}</ui-switch>
 				<ui-switch v-model="instance.isMarkedAsClosed" @change="updateInstance()">{{ $t('marked-as-closed') }}</ui-switch>
 				<details :open="true">
 					<summary>{{ $t('charts') }}</summary>
@@ -355,7 +354,7 @@ export default Vue.extend({
 				cc: this.cc,
 				blocked: this.state === 'blocked' ? true : null,
 				notResponding: this.state === 'notResponding' ? true : null,
-				markedAsClosed: this.state === 'markedAsClosed' ? true : null,
+				suspended: this.state === 'markedAsClosed' ? true : null,
 				sort: this.sort,
 				limit: this.limit
 			}).then(instances => {
@@ -388,8 +387,7 @@ export default Vue.extend({
 		updateInstance() {
 			this.$root.api('admin/federation/update-instance', {
 				host: this.instance.host,
-				isBlocked: this.instance.isBlocked || false,
-				isClosed: this.instance.isMarkedAsClosed || false
+				isSuspended: this.instance.isMarkedAsClosed || false
 			});
 		},
 

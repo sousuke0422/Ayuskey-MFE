@@ -3,7 +3,7 @@ import * as promiseLimit from 'promise-limit';
 import config from '../../../config';
 import Resolver from '../resolver';
 import { resolveImage } from './image';
-import { isCollectionOrOrderedCollection, isCollection, IPerson, getApId, getOneApHrefNullable, IObject } from '../type';
+import { isCollectionOrOrderedCollection, isCollection, IPerson, getApId, getOneApHrefNullable, IObject, isPropertyValue, IApPropertyValue } from '../type';
 import { fromHtml } from '../../../mfm/fromHtml';
 import { htmlToMfm } from '../misc/html-to-mfm';
 import { resolveNote, extractEmojis } from './note';
@@ -12,7 +12,7 @@ import { extractApHashtags } from './tag';
 import { apLogger } from '../logger';
 import { Note } from '../../../models/entities/note';
 import { updateUsertags } from '../../../services/update-hashtag';
-import { Users, UserNotePinings, Instances, DriveFiles, Followings, UserProfiles, UserPublickeys } from '../../../models';
+import { Users, Instances, DriveFiles, Followings, UserProfiles, UserPublickeys } from '../../../models';
 import { User, IRemoteUser } from '../../../models/entities/user';
 import { Emoji } from '../../../models/entities/emoji';
 import { UserNotePining } from '../../../models/entities/user-note-pinings';
@@ -23,11 +23,12 @@ import { isDuplicateKeyValueError } from '../../../misc/is-duplicate-key-value-e
 import { toPuny } from '../../../misc/convert-host';
 import { UserProfile } from '../../../models/entities/user-profile';
 import { validActor } from '../../../remote/activitypub/type';
-import { getConnection } from 'typeorm';
+import { getConnection, Not } from 'typeorm';
 import { ensure } from '../../../prelude/ensure';
 import { toArray } from '../../../prelude/array';
 import { fetchInstanceMetadata } from '../../../services/fetch-instance-metadata';
 import { normalizeTag } from '../../../misc/normalize-tag';
+import { resolveUser } from '../../resolve-user';
 
 const logger = apLogger;
 
@@ -137,7 +138,7 @@ export async function createPerson(uri: string, resolver?: Resolver): Promise<Us
 
 	const tags = extractApHashtags(person.tag).map(tag => normalizeTag(tag)).splice(0, 32);
 
-	const isBot = object.type == 'Service';
+	const isBot = object.type === 'Service';
 
 	const bday = person['vcard:bday']?.match(/^\d{4}-\d{2}-\d{2}/);
 
@@ -146,7 +147,7 @@ export async function createPerson(uri: string, resolver?: Resolver): Promise<Us
 	try {
 		// Start transaction
 		await getConnection().transaction(async transactionalEntityManager => {
-			user = await transactionalEntityManager.save(new User({
+			user = await transactionalEntityManager.insert(User, {
 				id: genId(),
 				avatarId: null,
 				bannerId: null,
@@ -160,15 +161,16 @@ export async function createPerson(uri: string, resolver?: Resolver): Promise<Us
 				host,
 				inbox: person.inbox,
 				sharedInbox: person.sharedInbox || (person.endpoints ? person.endpoints.sharedInbox : undefined),
+				followersUri: person.followers ? getApId(person.followers) : undefined,
 				featured: person.featured ? getApId(person.featured) : undefined,
 				uri: person.id,
 				tags,
 				isBot,
 				isCat: (person as any).isCat === true,
 				isLady: (person as any).isLady === true
-			})) as IRemoteUser;
+			}).then(x => transactionalEntityManager.findOneOrFail(User, x.identifiers[0])) as IRemoteUser;
 
-			await transactionalEntityManager.save(new UserProfile({
+			await transactionalEntityManager.insert(UserProfile, {
 				userId: user.id,
 				description: person.summary ? htmlToMfm(person.summary, person.tag) : null,
 				url: getOneApHrefNullable(person.url),
@@ -176,27 +178,33 @@ export async function createPerson(uri: string, resolver?: Resolver): Promise<Us
 				birthday: bday ? bday[0] : null,
 				location: person['vcard:Address'] || null,
 				userHost: host
-			}));
+			});
 
-			await transactionalEntityManager.save(new UserPublickey({
+			await transactionalEntityManager.insert(UserPublickey, {
 				userId: user.id,
 				keyId: person.publicKey.id,
 				keyPem: person.publicKey.publicKeyPem
-			}));
+			});
 		});
 	} catch (e) {
 		// duplicate key error
 		if (isDuplicateKeyValueError(e)) {
-			// /users/@a => /users/:id のように入力がaliasなときにエラーになることがあるのを対応
+			// 同じ@username@hostを持つものがあった場合、エラーで被った先を返す
 			const u = await Users.findOne({
-				uri: person.id
+				uri: Not(person.id as string),
+				usernameLower: person.preferredUsername!.toLowerCase(),
+				host,
 			});
 
 			if (u) {
-				user = u as IRemoteUser;
-			} else {
-				throw new Error('already registered');
+				throw {
+					code: 'DUPLICATED_USERNAME',
+					with: u,
+				};
 			}
+
+			logger.error(e);
+			throw e;
 		} else {
 			logger.error(e);
 			throw e;
@@ -332,11 +340,12 @@ export async function updatePerson(uri: string, resolver?: Resolver | null, hint
 		lastFetchedAt: new Date(),
 		inbox: person.inbox,
 		sharedInbox: person.sharedInbox || (person.endpoints ? person.endpoints.sharedInbox : undefined),
+		followersUri: person.followers ? getApId(person.followers) : undefined,
 		featured: person.featured,
 		emojis: emojiNames,
 		name: person.name,
 		tags,
-		isBot: object.type == 'Service',
+		isBot: object.type === 'Service',
 		isCat: (person as any).isCat === true,
 		isLady: (person as any).isLady === true,
 		isLocked: !!person.manuallyApprovesFollowers,
@@ -364,7 +373,7 @@ export async function updatePerson(uri: string, resolver?: Resolver | null, hint
 	});
 
 	await UserProfiles.update({ userId: exist.id }, {
-		url: person.url,
+		url: getOneApHrefNullable(person.url),
 		fields,
 		description: person.summary ? fromHtml(person.summary) : null,
 		birthday: bday ? bday[0] : null,
@@ -412,7 +421,48 @@ export async function resolvePerson(uri: string, resolver?: Resolver): Promise<U
 
 	// リモートサーバーからフェッチしてきて登録
 	if (resolver == null) resolver = new Resolver();
-	return await createPerson(uri, resolver);
+
+	try {
+		return await createPerson(uri, resolver);
+	} catch (e) {
+		if (e.code === 'DUPLICATED_USERNAME') {
+			// uriからresolveしたユーザーを作成しようとしたら同じ @username@host が既に存在した場合にここに来る
+			const existUser = e.with as IRemoteUser;
+			logger.warn(`Duplicated username. input(uri=${uri}) exist(uri=${existUser.uri} username=${existUser.username}, host=${existUser.host})`);
+
+			// WebFinger(@username@host)からresync をトリガする (24時間以上古い場合)
+			resolveUser(existUser.username, existUser.host);
+		}
+
+		throw e;
+	}
+}
+
+const services: {
+		[x: string]: (id: string, username: string) => any
+	} = {
+	'misskey:authentication:twitter': (userId, screenName) => ({ userId, screenName }),
+	'misskey:authentication:github': (id, login) => ({ id, login }),
+	'misskey:authentication:discord': (id, name) => $discord(id, name)
+};
+
+const $discord = (id: string, name: string) => {
+	if (typeof name !== 'string')
+		name = 'unknown#0000';
+	const [username, discriminator] = name.split('#');
+	return { id, username, discriminator };
+};
+
+function addService(target: { [x: string]: any }, source: IApPropertyValue) {
+	const service = services[source.name];
+
+	if (typeof source.value !== 'string')
+		source.value = 'unknown';
+
+	const [id, username] = source.value.split('@');
+
+	if (service)
+		target[source.name.split(':')[2]] = service(id, username);
 }
 
 export function analyzeAttachments(attachments: IObject | IObject[] | undefined) {
@@ -421,6 +471,19 @@ export function analyzeAttachments(attachments: IObject | IObject[] | undefined)
 		value: string
 	}[] = [];
 	const services: { [x: string]: any } = {};
+
+	if (Array.isArray(attachments)) {
+		for (const attachment of attachments.filter(isPropertyValue)) {
+			if (isPropertyValue(attachment.identifier)) {
+				addService(services, attachment.identifier);
+			} else {
+				fields.push({
+					name: attachment.name,
+					value: fromHtml(attachment.value)
+				});
+			}
+		}
+	}
 
 	return { fields, services };
 }
@@ -449,18 +512,19 @@ export async function updateFeatured(userId: User['id']) {
 		.slice(0, 20)
 		.map(item => limit(() => resolveNote(item, resolver))));
 
-	// delete
-	await UserNotePinings.delete({ userId: user.id });
+	await getConnection().transaction(async transactionalEntityManager => {
+		await transactionalEntityManager.delete(UserNotePining, { userId: user.id });
 
-	// とりあえずidを別の時間で生成して順番を維持
-	let td = 0;
-	for (const note of featuredNotes.filter(note => note != null)) {
-		td -= 1000;
-		UserNotePinings.save({
-			id: genId(new Date(Date.now() + td)),
-			createdAt: new Date(),
-			userId: user.id,
-			noteId: note!.id
-		} as UserNotePining);
-	}
+		// とりあえずidを別の時間で生成して順番を維持
+		let td = 0;
+		for (const note of featuredNotes.filter(note => note != null)) {
+			td -= 1000;
+			transactionalEntityManager.insert(UserNotePining, {
+				id: genId(new Date(Date.now() + td)),
+				createdAt: new Date(),
+				userId: user.id,
+				noteId: note!.id
+			});
+		}
+	});
 }

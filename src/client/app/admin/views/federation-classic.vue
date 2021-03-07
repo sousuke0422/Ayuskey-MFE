@@ -298,7 +298,7 @@ export default Vue.extend({
 			this.$root.api('federation/instances', {
 				blocked: this.state === 'blocked' ? true : null,
 				notResponding: this.state === 'notResponding' ? true : null,
-				markedAsClosed: this.state === 'markedAsClosed' ? true : null,
+				suspended: this.state === 'markedAsClosed' ? true : null,
 				sort: this.sort,
 				limit: this.limit
 			}).then(instances => {
@@ -331,8 +331,7 @@ export default Vue.extend({
 		updateInstance() {
 			this.$root.api('admin/federation/update-instance', {
 				host: this.instance.host,
-				isBlocked: this.instance.isBlocked || false,
-				isClosed: this.instance.isMarkedAsClosed || false
+				isSuspended: this.instance.isMarkedAsClosed || false
 			});
 		},
 

@@ -4,12 +4,6 @@
 
 import composeNotification from './common/scripts/compose-notification';
 
-// eslint-disable-next-line no-undef
-const version = _VERSION_;
-const cacheName = `mk-cache-${version}`;
-
-const apiUrl = `${location.origin}/api/`;
-
 // インストールされたとき
 self.addEventListener('install', ev => {
 	console.info('installed');
@@ -76,9 +70,12 @@ self.addEventListener('push', ev => {
 		const n = composeNotification(type, body);
 		return self.registration.showNotification(n.title, {
 			body: n.body,
-			icon: n.icon,
+			icon: n.icon
 		});
 	}));
+});
+
+self.addEventListener('fetch', ev => {
 });
 
 self.addEventListener('notificationclick', function(event) {
