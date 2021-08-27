@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkayuskey_mfe=self.webpackChunkayuskey_mfe||[]).push([[598,8666,2622],{18666:(e,t,n)=>{n.d(t,{hY:()=>o});var s=n(70703);const u=new Map;function o(e){const t=s.c.get("sound_"+e);null!=t.type&&function(e,t){if(0===s.c.get("sound_masterVolume"))return;(function(e,t){const n=s.c.get("sound_masterVolume");return e.volume=n-(1-t)*n,e})(function(e,t=!0){let n;return t&&u.has(e)?n=u.get(e):(n=new Audio(`/static-assets/sounds/${e}.mp3`),t&&u.set(e,n)),n}(e),t).play()}(t.type,t.volume)}}}]);
+//# sourceMappingURL=598.11.37.1-amfe.js.map
