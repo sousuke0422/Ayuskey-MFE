@@ -70,7 +70,9 @@ export default Vue.extend({
 	},
 
 	created() {
-		this.$root.api('stats', {}, false, true).then((stats: any) => {
+		// あゆすきーとめいすきー以外はGETできない
+		// でも、2021/08/29 0:50現在はこのapiはあゆすきーもできない #559
+		this.$root.api('stats', {}, false, false).then((stats: any) => {
 			this.stats = stats;
 		});
 		this.$root.getMeta().then((meta: any) => {
