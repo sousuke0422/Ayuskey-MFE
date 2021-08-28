@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as webpack from 'webpack';
 import * as chalk from 'chalk';
-import rndstr from 'rndstr';
+import { execSync } from 'child_process';
 const { VueLoaderPlugin } = require('vue-loader');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
@@ -21,14 +21,16 @@ class WebpackOnBuildPlugin {
 
 const isProduction = process.env.NODE_ENV == 'production';
 const isTesting = process.env.RK_MODE == 'testing';
+let gitHash
 
 const constants = require('./src/const.json');
 
 const locales = require('./locales');
 const meta = require('./package.json');
 const codename = meta.codename;
-
-const version = isProduction ? isTesting ? meta.version + '-' + rndstr({ length: 8, chars: '0-9a-z' }) : meta.version : meta.version + '-' + rndstr({ length: 8, chars: '0-9a-z' });
+if (!isProduction || isTesting) gitHash = execSync('git rev-parse HEAD').toString().replace(/\r?\n/g, '').slice(0, 8)
+//const version = isProduction ? isTesting ? meta.version + '-' + rndstr({ length: 8, chars: '0-9a-z' }) : meta.version : meta.version + '-' + rndstr({ length: 8, chars: '0-9a-z' });
+const version = isProduction ? isTesting ? meta.version + '-' + gitHash : meta.version : meta.version + '-' + gitHash;
 //const version = isProduction ? meta.version : meta.version + '-' + rndstr({ length: 8, chars: '0-9a-z' });
 
 const postcss = {
@@ -149,7 +151,7 @@ module.exports = {
 					options: {
 						implementation: require('sass'),
 						sassOptions: {
-							fiber: require('fibers')
+							fiber: false
 						}
 					}
 				}]
@@ -167,7 +169,7 @@ module.exports = {
 					options: {
 						implementation: require('sass'),
 						sassOptions: {
-							fiber: require('fibers')
+							fiber: false
 						}
 					}
 				}]

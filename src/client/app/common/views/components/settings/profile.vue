@@ -92,6 +92,7 @@
 		<div>
 			<ui-switch v-model="isLocked" @change="save(false)">{{ $t('is-locked') }}</ui-switch>
 			<ui-switch v-model="carefulBot" :disabled="isLocked" @change="save(false)">{{ $t('careful-bot') }}</ui-switch>
+			<ui-switch v-model="carefulMassive" :disabled="isLocked" @change="save(false)">{{ $t('careful-massive') }}</ui-switch>
 			<ui-switch v-model="autoAcceptFollowed" :disabled="!isLocked && !carefulBot" @change="save(false)">{{ $t('auto-accept-followed') }}</ui-switch>
 			<ui-switch v-model="noCrawle" @change="save(false)">{{ $t('no-crawle') }}</ui-switch>
 			<ui-switch v-model="isExplorable" @change="save(false)">{{ $t('isExplorable') }}</ui-switch>
@@ -179,6 +180,7 @@ export default Vue.extend({
 			isBot: false,
 			isLocked: false,
 			carefulBot: false,
+			carefulMassive: true,
 			autoAcceptFollowed: false,
 			noCrawle: false,
 			isExplorable: false,
@@ -223,6 +225,7 @@ export default Vue.extend({
 		this.isBot = this.$store.state.i.isBot;
 		this.isLocked = this.$store.state.i.isLocked;
 		this.carefulBot = this.$store.state.i.carefulBot;
+		this.carefulMassive = this.$store.state.i.carefulMassive;
 		this.autoAcceptFollowed = this.$store.state.i.autoAcceptFollowed;
 		this.noCrawle = this.$store.state.i.noCrawle;
 		this.isExplorable = this.$store.state.i.isExplorable;
@@ -306,6 +309,7 @@ export default Vue.extend({
 				isBot: !!this.isBot,
 				isLocked: !!this.isLocked,
 				carefulBot: !!this.carefulBot,
+				carefulMassive: !!this.carefulMassive,
 				autoAcceptFollowed: !!this.autoAcceptFollowed,
 				noCrawle: !!this.noCrawle,
 				isExplorable: !!this.isExplorable,
@@ -385,6 +389,16 @@ export default Vue.extend({
 
 		doImport() {
 			this.$chooseDriveFile().then(file => {
+				if (this.exportTarget === 'following' && file.name?.match(/mute|block/i)) {
+					throw new Error(`following but name is ${file.name}`);
+				}
+				if (this.exportTarget === 'mute' && file.name?.match(/follow/i)) {
+					throw new Error(`mute but name is ${file.name}`);
+				}
+				if (this.exportTarget === 'blocking' && file.name?.match(/follow/i)) {
+					throw new Error(`blocking but name is ${file.name}`);
+				}
+
 				this.$root.api(
 					this.exportTarget == 'following' ? 'i/import-following' :
 					this.exportTarget == 'blocking' ? 'i/import-blocking' :
@@ -402,6 +416,11 @@ export default Vue.extend({
 						text: e.message
 					});
 				});
+			}).catch((e: any) => {
+					this.$root.dialog({
+						type: 'error',
+						text: e.message
+					});
 			});
 		},
 

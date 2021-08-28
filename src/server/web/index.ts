@@ -24,6 +24,7 @@ import redis from '../../db/redis';
 
 const env = process.env.NODE_ENV;
 
+const staticAssets = `${__dirname}/../../../assets/client/`;
 const client = `${__dirname}/../../client/`;
 
 // Init app
@@ -55,6 +56,13 @@ app.use(async (ctx, next) => {
 const router = new Router();
 
 //#region static assets
+
+router.get('/static-assets/*', async ctx => {
+	await send(ctx as any, ctx.path.replace('/static-assets/', ''), {
+		root: staticAssets,
+		maxage: ms('7 days'),
+	});
+});
 
 router.get('/assets/*', async ctx => {
 	if (env !== 'production') {
@@ -319,6 +327,10 @@ const override = (source: string, target: string, depth: number = 0) =>
 
 router.get('/othello', async ctx => ctx.redirect(override(ctx.URL.pathname, 'games/reversi', 1)));
 router.get('/reversi', async ctx => ctx.redirect(override(ctx.URL.pathname, 'games')));
+
+router.get('/flush', async ctx => {
+	await ctx.render('flush');
+});
 
 // streamingに非WebSocketリクエストが来た場合にbase htmlをキャシュ付きで返すと、Proxy等でそのパスがキャッシュされておかしくなる
 router.get('/streaming', async ctx => {

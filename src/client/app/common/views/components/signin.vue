@@ -9,7 +9,7 @@ import Vue from 'vue';
 import i18n from '../../../i18n';
 import { apiUrl, host, instanceHost } from '../../../config';
 import { toUnicode } from 'punycode';
-import { hexifyAB } from '../../scripts/2fa';
+import { hexifyAB, byteify } from '../../scripts/2fa';
 
 export default Vue.extend({
 	i18n: i18n('common/views/components/signin.vue'),
@@ -78,7 +78,12 @@ export default Vue.extend({
 			} finally {
 				this.signing = false;
 			}
-		}
+		},
+
+		onFlush() {
+			const r = confirm('ブラウザに保存されたキャッシュをクリアしますか？');
+			if (r) location.href = '/flush';
+		},
 	}
 });
 </script>

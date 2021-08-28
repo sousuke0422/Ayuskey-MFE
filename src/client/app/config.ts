@@ -35,3 +35,5 @@ export const copyright = _COPYRIGHT_;
 export const version = _VERSION_;
 export const codename = _CODENAME_;
 export const env = _ENV_;
+
+export const debug = false;

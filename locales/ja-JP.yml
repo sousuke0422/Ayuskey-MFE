@@ -86,6 +86,7 @@ common:
   followers: "フォロワー"
   favorites: "お気に入り"
   aboutInstance: "このインスタンスについて"
+  flush: "キャッシュをクリア"
 
   permissions:
     "read:account": "アカウントの情報を見る"
@@ -342,6 +343,11 @@ common:
     preview: "プレビュー"
     home-profile: "ホームのプロファイル"
     deck-profile: "デッキのプロファイル"
+    hasDisconnectedAction: "サーバーから切断されていたとき"
+    _hasDisconnectedAction:
+      reload: "自動でリロードする"
+      notify: "通知のみ"
+      nothing: "なにもしない"
     room: "ルーム"
     _room:
       graphicsQuality: "グラフィックの品質"
@@ -876,7 +882,9 @@ common/views/components/profile-editor.vue:
   is-lady: "このアカウントはLadyです"
   is-bot: "このアカウントはBotです"
   is-locked: "フォローを承認制にする"
-  careful-bot: "Botからのフォローだけ承認制にする"
+  careful-bot: "Botからのフォローは承認制にする"
+  careful-remote: "リモートからのフォローは承認制にする"
+  careful-massive: "大量フォローユーザーのフォローは承認制にする"
   auto-accept-followed: "フォローしているユーザーからのフォローを自動承認する"
   no-crawle: "クローラーによるインデックスを拒否"
   isExplorable: "みつけるに表示する"
@@ -1331,6 +1339,9 @@ common/views/components/post-form-attaches.vue:
   mark-as-sensitive: "閲覧注意に設定"
   unmark-as-sensitive: "閲覧注意を解除"
 
+common/views/components/tag-cloud.vue:
+  empty: "タグは空っぽのようです"
+  
 desktop/views/components/sub-note-content.vue:
   private: "この投稿は非公開です"
   deleted: "この投稿は削除されました"
@@ -1821,6 +1832,7 @@ desktop/views/pages/welcome.vue:
   photos: "最近の画像"
   powered-by-misskey: "Powered by <b>Misskey</b>."
   info: "情報"
+  not-found-maintainerName: "メンテナが設定されていません"
 
 desktop/views/pages/drive.vue:
   title: "Misskey Drive"

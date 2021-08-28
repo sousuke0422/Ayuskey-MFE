@@ -1,3 +1,4 @@
+import { URL } from 'url';
 import * as Bull from 'bull';
 import * as httpSignature from 'http-signature';
 import perform from '../../remote/activitypub/perform';
@@ -47,12 +48,25 @@ export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
 
 	// keyIdでわからなければ、activity.actorを元にDBから取得 || activity.actorを元にリモートから取得
 	if (authUser == null) {
-		authUser = await dbResolver.getAuthUserFromApId(getApId(activity.actor));
+		try {
+			authUser = await dbResolver.getAuthUserFromApId(getApId(activity.actor));
+		} catch (e) {
+			// 対象が4xxならスキップ
+			if (e.statusCode >= 400 && e.statusCode < 500) {
+				return `skip: Ignored deleted actors on both ends ${activity.actor} - ${e.statusCode}`;
+			}
+			throw `Error in actor ${activity.actor} - ${e.statusCode || e}`;
+		}
 	}
 
 	// それでもわからなければ終了
 	if (authUser == null) {
 		return `skip: failed to resolve user`;
+	}
+
+	// publicKey がなくても終了
+	if (authUser.key == null) {
+		return `skip: failed to resolve user publicKey`;
 	}
 
 	// HTTP-Signatureの検証
@@ -77,6 +91,10 @@ export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
 			authUser = await dbResolver.getAuthUserFromKeyId(activity.signature.creator);
 			if (authUser == null) {
 				return `skip: LD-Signatureのユーザーが取得できませんでした`;
+			}
+
+			if (authUser.key == null) {
+				return `skip: LD-SignatureのユーザーはpublicKeyを持っていませんでした`;
 			}
 
 			// LD-Signature検証

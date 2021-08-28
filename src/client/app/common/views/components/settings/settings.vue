@@ -194,6 +194,15 @@
 			</section>
 
 			<section>
+				<header>{{ $t('@._settings.hasDisconnectedAction') }}</header>
+				<ui-select v-model="hasDisconnectedAction">
+					<option value="reload">{{ $t('@._settings._hasDisconnectedAction.reload') }}</option>
+					<option value="notify">{{ $t('@._settings._hasDisconnectedAction.notify') }}</option>
+					<option value="nothing">{{ $t('@._settings._hasDisconnectedAction.nothing') }}</option>
+				</ui-select>
+			</section>
+
+			<section>
 				<header>{{ $t('@._settings.room') }}</header>
 				<ui-select v-model="roomGraphicsQuality">
 					<template #label>{{ $t('@._settings._room.graphicsQuality') }}</template>
@@ -356,6 +365,8 @@ import XRegEdit from './regedit.vue';
 import MkReactionPicker from '../reaction-picker.vue';
 
 import { url, version, instanceHost } from '../../../../config';
+import { ColdDeviceStorage } from '../../../../store';
+import * as sound from '../../../../common/scripts/sound';
 import checkForUpdate from '../../../scripts/check-for-update';
 import { formatTimeString } from '../../../../../../misc/format-time-string';
 import { faSave, faEye } from '@fortawesome/free-regular-svg-icons';
@@ -465,8 +476,8 @@ export default Vue.extend({
 		},
 
 		soundVolume: {
-			get() { return this.$store.state.device.soundVolume; },
-			set(value) { this.$store.commit('device/set', { key: 'soundVolume', value }); }
+			get() { return ColdDeviceStorage.get('sound_masterVolume'); },
+			set(value) { ColdDeviceStorage.set('sound_masterVolume', value); }
 		},
 
 		debug: {
@@ -608,6 +619,11 @@ export default Vue.extend({
 			set(value) { this.$store.dispatch('settings/set', { key: 'iLikeSushi', value }); }
 		},
 
+		hasDisconnectedAction: {
+			get() { return this.$store.state.device.hasDisconnectedAction; },
+			set(value) { this.$store.commit('device/set', { key: 'hasDisconnectedAction', value }); }
+		},
+
 		roomUseOrthographicCamera: {
 			get() { return this.$store.state.device.roomUseOrthographicCamera; },
 			set(value) { this.$store.commit('device/set', { key: 'roomUseOrthographicCamera', value }); }
@@ -733,9 +749,7 @@ export default Vue.extend({
 			});
 		},
 		soundTest() {
-			const sound = new Audio(`${url}/assets/waon.mp3`);
-			sound.volume = this.$store.state.device.soundVolume;
-			sound.play();
+			sound.play('chatBg');
 		},
 		pastedFileNamePreview() {
 			return `${formatTimeString(new Date(), this.pastedFileName).replace(/{{number}}/g, `1`)}.png`
